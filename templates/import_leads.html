@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tahfeel CRM — Import Leads</title>
+    <link rel="stylesheet" href="/static/css/tahfeel.css">
+  <link rel="icon" href="/static/img/logo_white.png" type="image/png">
+</head>
+<body>
+    {%- from 'macros.html' import topbar, nav, welcome -%}
+  {{ topbar() }}
+  {{ nav('import_leads') }}
+  <div class="container">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}{% for msg in messages %}
+        <div class="flash">{{ msg }}</div>
+      {% endfor %}{% endif %}
+    {% endwith %}
+
+    <div class="card card-leads">
+      <h2>Import leads from Excel</h2>
+
+      <a href="/leads/template" class="btn-download">⬇ Download Excel Template</a>
+
+      <div class="info-box">
+        <strong>How to use:</strong>
+        1. Download the template above<br>
+        2. Fill in your leads (do not change the column headers)<br>
+        3. For Assigned To — type the staff member's exact name<br>
+        4. Save as .xlsx and upload below<br>
+        5. Required columns are marked with *
+        <div class="columns">
+          <span class="col-item col-required">A — Name *</span>
+          <span class="col-item col-required">C — Phone *</span>
+          <span class="col-item">B — Company</span>
+          <span class="col-item">D — Email</span>
+          <span class="col-item">E — Address</span>
+          <span class="col-item">F — Source</span>
+          <span class="col-item">G — Service</span>
+          <span class="col-item">H — Lead Type</span>
+          <span class="col-item">I — Remarks</span>
+          <span class="col-item">J — Assigned To</span>
+        </div>
+      </div>
+
+      <form method="POST" enctype="multipart/form-data">
+        <label>Select Excel file (.xlsx)</label>
+        <div class="upload-area" onclick="document.getElementById('file-input').click()">
+          <p>Click to browse or drag and drop your Excel file here</p>
+          <p style="font-size:12px;color:#aaa;">.xlsx files only</p>
+          <input type="file" id="file-input" name="file" accept=".xlsx" onchange="showFileName(this)">
+          <div class="file-name" id="file-name"></div>
+        </div>
+        <button type="submit" class="btn-primary">Import Leads</button>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    function showFileName(input) {
+      const name = input.files[0]?.name || '';
+      document.getElementById('file-name').textContent = name ? 'Selected: ' + name : '';
+    }
+  </script>
+</body>
+</html>
