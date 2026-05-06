@@ -193,9 +193,41 @@ class Customer(db.Model):
     lead = db.relationship('Lead', foreign_keys=[lead_id])
     jobs = db.relationship('Job', backref='customer', lazy=True, order_by='Job.created_at.desc()')
 
+class Vendor(db.Model):
+    """Third-party vendors/suppliers for holiday services (hotels, airlines, tour operators, etc.)"""
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False)
+    company = db.Column(db.String(100))
+    phone = db.Column(db.String(20))
+    email = db.Column(db.String(100))
+    address = db.Column(db.String(200))
+    service_type = db.Column(db.String(100))  # Hotels, Airlines, Tours, Transportation, etc.
+    bank_name = db.Column(db.String(100))
+    account_number = db.Column(db.String(50))
+    iban = db.Column(db.String(50))
+    contact_person = db.Column(db.String(100))
+    notes = db.Column(db.Text)
+    active = db.Column(db.Boolean, default=True)
+    created_at = db.Column(db.DateTime, default=datetime.now)
+
+class VendorPayment(db.Model):
+    """Track payments to vendors for each task"""
+    id = db.Column(db.Integer, primary_key=True)
+    job_id = db.Column(db.Integer, db.ForeignKey('job.id'), nullable=False)
+    vendor_id = db.Column(db.Integer, db.ForeignKey('vendor.id'), nullable=False)
+    amount_due = db.Column(db.Float, default=0)
+    amount_paid = db.Column(db.Float, default=0)
+    payment_status = db.Column(db.String(20), default='Pending')  # Pending/Partial/Paid
+    payment_date = db.Column(db.Date)
+    due_date = db.Column(db.Date)
+    notes = db.Column(db.Text)
+    created_at = db.Column(db.DateTime, default=datetime.now)
+    vendor = db.relationship('Vendor', backref='payments')
+
 class Job(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     customer_id = db.Column(db.Integer, db.ForeignKey('customer.id'), nullable=False)
+    vendor_id = db.Column(db.Integer, db.ForeignKey('vendor.id'), nullable=True)
     job_type = db.Column(db.String(100), nullable=False)
     assigned_to = db.Column(db.Integer, db.ForeignKey('user.id'))
     due_date = db.Column(db.DateTime)
@@ -205,6 +237,8 @@ class Job(db.Model):
     service_note = db.Column(db.String(200))
     amount_invoiced = db.Column(db.Float, default=0)
     amount_received = db.Column(db.Float, default=0)
+    vendor_amount = db.Column(db.Float, default=0)  # Amount to pay vendor
+    vendor_paid = db.Column(db.Float, default=0)  # Amount paid to vendor
     num_persons = db.Column(db.Integer, default=1)
     finance_approved_by = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
     finance_approved_at = db.Column(db.DateTime, nullable=True)
@@ -227,6 +261,7 @@ class Job(db.Model):
     assignee = db.relationship('User', foreign_keys=[assigned_to])
     creator = db.relationship('User', foreign_keys=[created_by])
     finance_approver = db.relationship('User', foreign_keys=[finance_approved_by])
+    vendor = db.relationship('Vendor', foreign_keys=[vendor_id])
     updates = db.relationship('JobUpdate', backref='job', lazy=True, order_by='JobUpdate.created_at.desc()')
     subtasks = db.relationship('SubTask', backref='job', lazy=True, order_by='SubTask.created_at')
     partial_revenues = db.relationship('PartialRevenue', backref='job', lazy=True, order_by='PartialRevenue.revenue_date.desc()')
@@ -1340,8 +1375,9 @@ def admin_panel():
     job_types = ServiceType.query.order_by(ServiceType.name).all()
     doc_types = DocType.query.order_by(DocType.name).all()
     partners = Partner.query.order_by(Partner.name).all()
+    vendors = Vendor.query.filter_by(active=True).order_by(Vendor.name).all()
     return render_template('admin_panel.html', users=users, services=services,
-                           sources=sources, campaigns=campaigns, job_types=job_types, doc_types=doc_types, partners=partners)
+                           sources=sources, campaigns=campaigns, job_types=job_types, doc_types=doc_types, partners=partners, vendors=vendors)
 
 # TEMPORARILY DISABLED - WILL RE-ADD AFTER FIXING
 # @app.route('/admin/import-data')
@@ -2279,17 +2315,22 @@ def add_job():
         due = request.form.get('due_date')
         due_dt = datetime.strptime(due, '%Y-%m-%d') if due else None
         amount_invoiced = request.form.get('amount_invoiced') or 0
+        vendor_amount = request.form.get('vendor_amount') or 0
         assigned = request.form.get('assigned_to')
+        vendor_id = request.form.get('vendor_id')
         job = Job(
             customer_id=int(request.form['customer_id']),
             job_type=request.form['job_type'],
             assigned_to=int(assigned) if assigned else None,
+            vendor_id=int(vendor_id) if vendor_id else None,
             due_date=due_dt,
             priority=request.form.get('priority', 'Medium'),
             internal_notes=request.form.get('internal_notes'),
             service_note=request.form.get('service_note', '').strip() or None,
             amount_invoiced=float(amount_invoiced),
             amount_received=0,
+            vendor_amount=float(vendor_amount),
+            vendor_paid=0,
             num_persons=int(request.form.get('num_persons') or 1),
             created_by=session['user_id'],
             status='Pending Finance Approval'
@@ -2370,7 +2411,8 @@ def add_job():
     import json
     service_days = {jt.name: (getattr(jt, 'default_days', None) or 1) for jt in job_types}
     all_jobs = Job.query.order_by(Job.created_at.desc()).all()
-    return render_template('add_job.html', customers=customers, job_types=job_types, users=users, tomorrow=tomorrow, service_days=json.dumps(service_days), all_jobs=all_jobs)
+    vendors = Vendor.query.filter_by(active=True).order_by(Vendor.name).all()
+    return render_template('add_job.html', customers=customers, job_types=job_types, users=users, tomorrow=tomorrow, service_days=json.dumps(service_days), all_jobs=all_jobs, vendors=vendors)
 
 @app.route('/jobs/<int:job_id>', methods=['GET', 'POST'])
 @login_required
@@ -4380,5 +4422,87 @@ if __name__ == '__main__':
             print("✓ Admin created: admin@tahfeel.ae / tahfeel2026")
         else:
             print("✓ Admin user already exists")
+    
+    # ═══════════════════════════════════════════════════════════════════════════
+    # VENDOR MANAGEMENT
+    # ═══════════════════════════════════════════════════════════════════════════
+    
+    @app.route('/vendors')
+    @login_required
+    def vendors():
+        """Vendor listing and management page"""
+        vendors = Vendor.query.order_by(Vendor.name).all()
+        
+        # Calculate vendor stats
+        for vendor in vendors:
+            vendor_payments = VendorPayment.query.filter_by(vendor_id=vendor.id).all()
+            vendor.total_due = sum(p.amount_due for p in vendor_payments)
+            vendor.total_paid = sum(p.amount_paid for p in vendor_payments)
+            vendor.total_pending = vendor.total_due - vendor.total_paid
+            vendor.payment_count = len(vendor_payments)
+        
+        return render_template('vendors.html', vendors=vendors)
+    
+    @app.route('/vendors/add', methods=['POST'])
+    @login_required
+    @admin_required
+    def add_vendor():
+        """Add new vendor"""
+        name = request.form.get('name')
+        if not name:
+            flash('Vendor name is required')
+            return redirect(url_for('vendors'))
+        
+        vendor = Vendor(
+            name=name,
+            company=request.form.get('company', ''),
+            phone=request.form.get('phone', ''),
+            email=request.form.get('email', ''),
+            address=request.form.get('address', ''),
+            service_type=request.form.get('service_type', ''),
+            bank_name=request.form.get('bank_name', ''),
+            account_number=request.form.get('account_number', ''),
+            iban=request.form.get('iban', ''),
+            contact_person=request.form.get('contact_person', ''),
+            notes=request.form.get('notes', ''),
+            active=True
+        )
+        db.session.add(vendor)
+        db.session.commit()
+        flash(f'Vendor {name} added successfully')
+        return redirect(url_for('vendors'))
+    
+    @app.route('/vendors/<int:vendor_id>/edit', methods=['POST'])
+    @login_required
+    @admin_required
+    def edit_vendor(vendor_id):
+        """Edit vendor details"""
+        vendor = Vendor.query.get_or_404(vendor_id)
+        vendor.name = request.form.get('name', vendor.name)
+        vendor.company = request.form.get('company', '')
+        vendor.phone = request.form.get('phone', '')
+        vendor.email = request.form.get('email', '')
+        vendor.address = request.form.get('address', '')
+        vendor.service_type = request.form.get('service_type', '')
+        vendor.bank_name = request.form.get('bank_name', '')
+        vendor.account_number = request.form.get('account_number', '')
+        vendor.iban = request.form.get('iban', '')
+        vendor.contact_person = request.form.get('contact_person', '')
+        vendor.notes = request.form.get('notes', '')
+        vendor.active = request.form.get('active') == 'on'
+        db.session.commit()
+        flash(f'Vendor {vendor.name} updated successfully')
+        return redirect(url_for('vendors'))
+    
+    @app.route('/vendors/<int:vendor_id>/delete')
+    @login_required
+    @admin_required
+    def delete_vendor(vendor_id):
+        """Delete vendor (soft delete - set inactive)"""
+        vendor = Vendor.query.get_or_404(vendor_id)
+        vendor.active = False
+        db.session.commit()
+        flash(f'Vendor {vendor.name} deactivated')
+        return redirect(url_for('vendors'))
     
     app.run(debug=False, host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
