@@ -84,8 +84,8 @@
       .pv-close, .pv-btns { display:none !important; }
     }
     /* Section panels */
-    #invoiceSection, #invoice-serviceSection, #quotationSection { display:none; }
-    #invoiceSection.active, #invoice-serviceSection.active, #quotationSection.active { display:block; }
+    #invoiceSection, #invoice-serviceSection { display:none; }
+    #invoiceSection.active, #invoice-serviceSection.active { display:block; }
   </style>
 </head>
 <body>
@@ -98,12 +98,11 @@
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;">
       <div>
         <div class="page-head-title">🧾 Document Generator</div>
-        <div style="font-size:12px;color:#94A3B8;margin-top:2px;">Create professional invoices and quotations</div>
+        <div style="font-size:12px;color:#94A3B8;margin-top:2px;">Create invoices for travel, tours & holiday packages</div>
       </div>
       <div class="gen-tabs">
-        <button class="active" onclick="switchTab('invoice',this)">📄 Invoice</button>
-        <button onclick="switchTab('invoice-service',this)">📄 Invoice - Service</button>
-        <button onclick="switchTab('quotation',this)">📋 Quotation</button>
+        <button class="active" onclick="switchTab('invoice',this)">📄 Invoice - Package</button>
+        <button onclick="switchTab('invoice-service',this)">📄 Invoice - Services</button>
       </div>
     </div>
 
@@ -250,81 +249,6 @@
     </div>
 
     <!-- ═══════════════════ QUOTATION SECTION ═══════════════════ -->
-    <div id="quotationSection">
-      <div class="inv-card">
-        <h3>Document Details</h3>
-        <div class="inv-row c3">
-          <div class="inv-ff"><label>Date</label><input type="date" id="qtDate"></div>
-          <div class="inv-ff"><label>Quotation No.</label><input type="text" id="qtNo"></div>
-          <div class="inv-ff"><label>Valid Until <span class="opt">(optional)</span></label><input type="date" id="qtValid"></div>
-        </div>
-      <div class="inv-row c2">
-        <div class="inv-ff"><label>Remarks <span class="opt">(optional — shows on quotation)</span></label><input type="text" id="qtNote" placeholder="e.g. Special price approved by management"></div>
-        <div></div>
-      </div>
-      </div>
-      <div class="inv-card purple">
-        <h3>Bill To</h3>
-        <div class="inv-row c2">
-          <div class="inv-ff"><label>Customer Name <span class="req">*</span></label><input type="text" id="qtCustName" placeholder="Full name"></div>
-          <div class="inv-ff"><label>Company <span class="opt">(optional)</span></label><input type="text" id="qtCustCo" placeholder="Company name"></div>
-        </div>
-        <div class="inv-row c2">
-          <div class="inv-ff"><label>Phone <span class="req">*</span></label><input type="text" id="qtCustPhone" placeholder="+971 XX XXX XXXX"></div>
-          <div class="inv-ff"><label>Email <span class="opt">(optional)</span></label><input type="email" id="qtCustEmail" placeholder="email@example.com"></div>
-        </div>
-        <div class="inv-row"><div class="inv-ff"><label>Address <span class="opt">(optional)</span></label><input type="text" id="qtCustAddr" placeholder="Customer address"></div></div>
-      </div>
-      <div class="inv-card green">
-        <h3>Services / Items</h3>
-        <table class="inv-tbl">
-          <thead><tr>
-            <th style="width:24px;text-align:center;">#</th>
-            <th style="width:42%;">Description</th>
-            <th class="r" style="width:32px;">Qty</th>
-            <th class="r" style="width:80px;">Svc Charge</th>
-            <th class="r" style="width:80px;">Govt. Charge</th>
-            <th class="r" style="width:80px;">Total (AED)</th>
-            <th style="width:30px;"></th>
-          </tr></thead>
-          <tbody id="qtItemsBody"></tbody>
-        </table>
-        <button class="inv-add-btn green" onclick="addRow('qt')">+ Add Line</button>
-        <div class="inv-totals-wrap"><div class="inv-totals-box">
-          <div class="inv-tot-row"><span class="lbl">Subtotal</span><span class="val" id="qtSubtotal">AED 0.00</span></div>
-          <div class="inv-tot-row"><span class="lbl">VAT (5% on service)</span><span class="val" id="qtVat">AED 0.00</span></div>
-          <div class="inv-tot-row grand"><span class="lbl">TOTAL</span><span class="val" id="qtTotal">AED 0.00</span></div>
-          <div class="inv-words" id="qtWords">AED Zero Only</div>
-        </div></div>
-      </div>
-      <div class="inv-card amber">
-        <h3>Terms &amp; Conditions <span style="font-size:10px;color:#94A3B8;font-weight:400;text-transform:none;">(each line = bullet point)</span></h3>
-        <ul class="addable-list" id="qtTcList"></ul>
-        <button class="inv-add-btn amber" onclick="addItem('qtTcList','Enter term...')">+ Add Term</button>
-      </div>
-      <div class="inv-card purple">
-        <h3>Required Documents <span style="font-size:10px;color:#94A3B8;font-weight:400;text-transform:none;">(optional)</span></h3>
-        <ul class="addable-list" id="qtDocList"></ul>
-        <button class="inv-add-btn purple" onclick="addItem('qtDocList','Document name...')">+ Add Document</button>
-      </div>
-      <div class="inv-card slate">
-        <h3>Notes <span style="font-size:10px;color:#94A3B8;font-weight:400;text-transform:none;">(optional)</span></h3>
-        <ul class="addable-list" id="qtNoteList"></ul>
-        <button class="inv-add-btn" onclick="addItem('qtNoteList','Note...')">+ Add Note</button>
-      </div>
-      <div class="inv-card pink">
-        <h3>Contact Person</h3>
-        <div class="inv-row c2">
-          <div class="inv-ff"><label>Staff Name</label><input type="text" id="qtStaffName" placeholder="e.g. Anfal Ahmed"></div>
-          <div class="inv-ff"><label>Mobile Number</label><input type="text" id="qtStaffMobile" placeholder="+971 XX XXX XXXX"></div>
-        </div>
-      </div>
-      <div class="inv-actions">
-        <button class="inv-btn inv-btn-s" onclick="resetQt()">↻ Reset</button>
-        <button class="inv-btn inv-btn-g" onclick="previewQt()">👁 Preview</button>
-        <button class="inv-btn inv-btn-p" onclick="printDoc()">🖨 Print / PDF</button>
-      </div>
-    </div>
   </div>
 
   <!-- Preview Overlay -->
@@ -351,7 +275,6 @@ function switchTab(tab, btn) {
   btn.classList.add('active');
   document.getElementById('invoiceSection').classList.toggle('active', tab==='invoice');
   document.getElementById('invoice-serviceSection').classList.toggle('active', tab==='invoice-service');
-  document.getElementById('quotationSection').classList.toggle('active', tab==='quotation');
 }
 
 // ── Init ────────────────────────────────────────────────────
