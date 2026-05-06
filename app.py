@@ -4394,6 +4394,88 @@ def admin_delete_partner(partner_id):
     return redirect(url_for('admin_panel'))
 
 # ══════════════════════════════════════════════════════════════════════════════
+# VENDOR MANAGEMENT
+# ══════════════════════════════════════════════════════════════════════════════
+
+@app.route('/vendors')
+@login_required
+def vendors():
+    """Vendor listing and management page"""
+    vendors = Vendor.query.order_by(Vendor.name).all()
+    
+    # Calculate vendor stats
+    for vendor in vendors:
+        vendor_payments = VendorPayment.query.filter_by(vendor_id=vendor.id).all()
+        vendor.total_due = sum(p.amount_due for p in vendor_payments)
+        vendor.total_paid = sum(p.amount_paid for p in vendor_payments)
+        vendor.total_pending = vendor.total_due - vendor.total_paid
+        vendor.payment_count = len(vendor_payments)
+    
+    return render_template('vendors.html', vendors=vendors)
+
+@app.route('/vendors/add', methods=['POST'])
+@login_required
+@admin_required
+def add_vendor():
+    """Add new vendor"""
+    name = request.form.get('name')
+    if not name:
+        flash('Vendor name is required')
+        return redirect(url_for('vendors'))
+    
+    vendor = Vendor(
+        name=name,
+        company=request.form.get('company', ''),
+        phone=request.form.get('phone', ''),
+        email=request.form.get('email', ''),
+        address=request.form.get('address', ''),
+        service_type=request.form.get('service_type', ''),
+        bank_name=request.form.get('bank_name', ''),
+        account_number=request.form.get('account_number', ''),
+        iban=request.form.get('iban', ''),
+        contact_person=request.form.get('contact_person', ''),
+        notes=request.form.get('notes', ''),
+        active=True
+    )
+    db.session.add(vendor)
+    db.session.commit()
+    flash(f'Vendor {name} added successfully')
+    return redirect(url_for('vendors'))
+
+@app.route('/vendors/<int:vendor_id>/edit', methods=['POST'])
+@login_required
+@admin_required
+def edit_vendor(vendor_id):
+    """Edit vendor details"""
+    vendor = Vendor.query.get_or_404(vendor_id)
+    vendor.name = request.form.get('name', vendor.name)
+    vendor.company = request.form.get('company', '')
+    vendor.phone = request.form.get('phone', '')
+    vendor.email = request.form.get('email', '')
+    vendor.address = request.form.get('address', '')
+    vendor.service_type = request.form.get('service_type', '')
+    vendor.bank_name = request.form.get('bank_name', '')
+    vendor.account_number = request.form.get('account_number', '')
+    vendor.iban = request.form.get('iban', '')
+    vendor.contact_person = request.form.get('contact_person', '')
+    vendor.notes = request.form.get('notes', '')
+    vendor.active = request.form.get('active') == 'on'
+    db.session.commit()
+    flash(f'Vendor {vendor.name} updated successfully')
+    return redirect(url_for('vendors'))
+
+@app.route('/vendors/<int:vendor_id>/delete')
+@login_required
+@admin_required
+def delete_vendor(vendor_id):
+    """Delete vendor (soft delete - set inactive)"""
+    vendor = Vendor.query.get_or_404(vendor_id)
+    vendor.active = False
+    db.session.commit()
+    flash(f'Vendor {vendor.name} deactivated')
+    return redirect(url_for('vendors'))
+
+# ══════════════════════════════════════════════════════════════════════════════
 # TEMPORARY ADMIN ROUTE - Fix April 30 Revenue Dates
 # ══════════════════════════════════════════════════════════════════════════════
 # ══════════════════════════════════════════════════════════════════════════════
@@ -4422,87 +4504,5 @@ if __name__ == '__main__':
             print("✓ Admin created: admin@tahfeel.ae / tahfeel2026")
         else:
             print("✓ Admin user already exists")
-    
-    # ═══════════════════════════════════════════════════════════════════════════
-    # VENDOR MANAGEMENT
-    # ═══════════════════════════════════════════════════════════════════════════
-    
-    @app.route('/vendors')
-    @login_required
-    def vendors():
-        """Vendor listing and management page"""
-        vendors = Vendor.query.order_by(Vendor.name).all()
-        
-        # Calculate vendor stats
-        for vendor in vendors:
-            vendor_payments = VendorPayment.query.filter_by(vendor_id=vendor.id).all()
-            vendor.total_due = sum(p.amount_due for p in vendor_payments)
-            vendor.total_paid = sum(p.amount_paid for p in vendor_payments)
-            vendor.total_pending = vendor.total_due - vendor.total_paid
-            vendor.payment_count = len(vendor_payments)
-        
-        return render_template('vendors.html', vendors=vendors)
-    
-    @app.route('/vendors/add', methods=['POST'])
-    @login_required
-    @admin_required
-    def add_vendor():
-        """Add new vendor"""
-        name = request.form.get('name')
-        if not name:
-            flash('Vendor name is required')
-            return redirect(url_for('vendors'))
-        
-        vendor = Vendor(
-            name=name,
-            company=request.form.get('company', ''),
-            phone=request.form.get('phone', ''),
-            email=request.form.get('email', ''),
-            address=request.form.get('address', ''),
-            service_type=request.form.get('service_type', ''),
-            bank_name=request.form.get('bank_name', ''),
-            account_number=request.form.get('account_number', ''),
-            iban=request.form.get('iban', ''),
-            contact_person=request.form.get('contact_person', ''),
-            notes=request.form.get('notes', ''),
-            active=True
-        )
-        db.session.add(vendor)
-        db.session.commit()
-        flash(f'Vendor {name} added successfully')
-        return redirect(url_for('vendors'))
-    
-    @app.route('/vendors/<int:vendor_id>/edit', methods=['POST'])
-    @login_required
-    @admin_required
-    def edit_vendor(vendor_id):
-        """Edit vendor details"""
-        vendor = Vendor.query.get_or_404(vendor_id)
-        vendor.name = request.form.get('name', vendor.name)
-        vendor.company = request.form.get('company', '')
-        vendor.phone = request.form.get('phone', '')
-        vendor.email = request.form.get('email', '')
-        vendor.address = request.form.get('address', '')
-        vendor.service_type = request.form.get('service_type', '')
-        vendor.bank_name = request.form.get('bank_name', '')
-        vendor.account_number = request.form.get('account_number', '')
-        vendor.iban = request.form.get('iban', '')
-        vendor.contact_person = request.form.get('contact_person', '')
-        vendor.notes = request.form.get('notes', '')
-        vendor.active = request.form.get('active') == 'on'
-        db.session.commit()
-        flash(f'Vendor {vendor.name} updated successfully')
-        return redirect(url_for('vendors'))
-    
-    @app.route('/vendors/<int:vendor_id>/delete')
-    @login_required
-    @admin_required
-    def delete_vendor(vendor_id):
-        """Delete vendor (soft delete - set inactive)"""
-        vendor = Vendor.query.get_or_404(vendor_id)
-        vendor.active = False
-        db.session.commit()
-        flash(f'Vendor {vendor.name} deactivated')
-        return redirect(url_for('vendors'))
     
     app.run(debug=False, host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
