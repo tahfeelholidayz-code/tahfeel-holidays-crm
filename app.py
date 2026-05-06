@@ -4054,7 +4054,32 @@ def analytics():
 
 from reports import reports_bp
 app.register_blueprint(reports_bp)
-
+@app.route('/initialize-admin-user-temp')
+def initialize_admin():
+    from werkzeug.security import generate_password_hash
+    # Check if User model exists and create admin
+    try:
+        # Replace with your actual admin email and password
+        admin_email = "your-admin-email@tahfeel.ae"
+        admin_password = "your-admin-password"
+        
+        # Check if admin exists
+        existing = User.query.filter_by(email=admin_email).first()
+        if existing:
+            return "Admin already exists"
+        
+        # Create admin user
+        admin = User(
+            name="Admin",
+            email=admin_email,
+            password=generate_password_hash(admin_password),
+            role="admin"
+        )
+        db.session.add(admin)
+        db.session.commit()
+        return "Admin user created successfully! You can now login."
+    except Exception as e:
+        return f"Error: {str(e)}"
 if __name__ == '__main__':
     init_db()
     app.run(debug=True, host='0.0.0.0', port=5000)
