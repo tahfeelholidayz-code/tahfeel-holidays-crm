@@ -113,6 +113,20 @@ input, select, textarea, button { font-family: var(--font); }
   height: 18px;
   opacity: .8;
 }
+.topbar-avatar {
+  width: 32px;
+  height: 32px;
+  background: rgba(255,255,255,.2);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 14px;
+  font-weight: 700;
+  border: 1.5px solid rgba(255,255,255,.3);
+}
+.topbar-logout,
 .btn-logout {
   background: rgba(255,255,255,.12);
   color: white;
@@ -123,10 +137,14 @@ input, select, textarea, button { font-family: var(--font); }
   font-weight: 500;
   cursor: pointer;
   transition: var(--transition);
+  text-decoration: none;
+  display: inline-block;
 }
+.topbar-logout:hover,
 .btn-logout:hover {
   background: rgba(255,255,255,.18);
   border-color: rgba(255,255,255,.3);
+  color: white;
 }
 
 /* ── Layout Container ──────────────────────────────────── */

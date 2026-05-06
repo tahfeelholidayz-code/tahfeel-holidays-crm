@@ -1,8 +1,8 @@
 {% macro topbar() %}
 <div class="topbar">
   <div class="topbar-brand">
-    <img src="/static/img/logo_white.png" alt="Tahfeel" class="topbar-logo">
-    <span class="topbar-title">Business Solutions CRM</span>
+    <img src="/static/img/logo_transparent.png" alt="Tahfeel" class="topbar-logo" style="filter:brightness(0) invert(1);">
+    <span class="topbar-title">Tahfeel Holidays CRM</span>
   </div>
   <div class="topbar-right">
     <div class="topbar-user">
@@ -44,32 +44,44 @@
   <a href="/admin/backup/export" style="background:#FAEEDA;color:#633806;padding:4px 14px;border-radius:20px;font-weight:700;font-size:11px;text-decoration:none;white-space:nowrap;margin-left:16px;">⬇ Download Backup</a>
 </div>
 {% endif %}
-<div class="nav" style="background:#0F2660;">
-  <a href="/dashboard" {% if active=='dashboard' %}class="active"{% endif %} style="display:flex;align-items:center;gap:5px;">⊞ Dashboard</a>
+<div class="nav" style="background:#0D4D4D;border-bottom:1px solid rgba(255,255,255,.1);">
+  <a href="/dashboard" {% if active=='dashboard' %}class="active"{% endif %} style="display:flex;align-items:center;gap:6px;color:rgba(255,255,255,.85);text-decoration:none;padding:12px 16px;font-size:13.5px;font-weight:500;border-bottom:2px solid transparent;transition:all .2s;">⊞ Dashboard</a>
   {% if session.role != 'finance' %}
-  <a href="/leads" {% if active=='leads' or active=='add_lead' %}class="active"{% endif %} style="display:flex;align-items:center;gap:5px;">◉ Leads</a>
+  <a href="/leads" {% if active=='leads' or active=='add_lead' %}class="active"{% endif %} style="display:flex;align-items:center;gap:6px;color:rgba(255,255,255,.85);text-decoration:none;padding:12px 16px;font-size:13.5px;font-weight:500;border-bottom:2px solid transparent;transition:all .2s;">◉ Leads</a>
   {% endif %}
-  <a href="/jobs" {% if active=='jobs' %}class="active"{% endif %} style="display:flex;align-items:center;gap:5px;">✓ Tasks</a>
-  <a href="/customers" {% if active=='customers' %}class="active"{% endif %} style="display:flex;align-items:center;gap:5px;">👤 Customers</a>
-  <a href="/documents" {% if active=='documents' %}class="active"{% endif %} style="display:flex;align-items:center;gap:5px;">📄 Documents</a>
-  <a href="/desk" {% if active=='desk' %}class="active"{% endif %} style="display:flex;align-items:center;gap:5px;">📌 My Desk{% if session.get('unread_mentions',0) > 0 %}<span style="background:#EF4444;color:white;font-size:9px;font-weight:700;padding:1px 5px;border-radius:10px;margin-left:2px;">{{ session.get('unread_mentions',0) }}</span>{% endif %}</a>
+  <a href="/jobs" {% if active=='jobs' %}class="active"{% endif %} style="display:flex;align-items:center;gap:6px;color:rgba(255,255,255,.85);text-decoration:none;padding:12px 16px;font-size:13.5px;font-weight:500;border-bottom:2px solid transparent;transition:all .2s;">✓ Tasks</a>
+  <a href="/customers" {% if active=='customers' %}class="active"{% endif %} style="display:flex;align-items:center;gap:6px;color:rgba(255,255,255,.85);text-decoration:none;padding:12px 16px;font-size:13.5px;font-weight:500;border-bottom:2px solid transparent;transition:all .2s;">👤 Customers</a>
+  <a href="/documents" {% if active=='documents' %}class="active"{% endif %} style="display:flex;align-items:center;gap:6px;color:rgba(255,255,255,.85);text-decoration:none;padding:12px 16px;font-size:13.5px;font-weight:500;border-bottom:2px solid transparent;transition:all .2s;">📄 Documents</a>
+  <a href="/desk" {% if active=='desk' %}class="active"{% endif %} style="display:flex;align-items:center;gap:6px;color:rgba(255,255,255,.85);text-decoration:none;padding:12px 16px;font-size:13.5px;font-weight:500;border-bottom:2px solid transparent;transition:all .2s;">📌 My Desk{% if session.get('unread_mentions',0) > 0 %}<span style="background:#EF4444;color:white;font-size:9px;font-weight:700;padding:1px 5px;border-radius:10px;margin-left:2px;">{{ session.get('unread_mentions',0) }}</span>{% endif %}</a>
   {% if session.role in ['admin', 'sales'] %}
-  <a href="/activity" {% if active=='activity' %}class="active"{% endif %} style="display:flex;align-items:center;gap:5px;">📋 Daily Log</a>
+  <a href="/activity" {% if active=='activity' %}class="active"{% endif %} style="display:flex;align-items:center;gap:6px;color:rgba(255,255,255,.85);text-decoration:none;padding:12px 16px;font-size:13.5px;font-weight:500;border-bottom:2px solid transparent;transition:all .2s;">📋 Daily Log</a>
   {% endif %}
-  <a href="/invoice" {% if active=='invoice' %}class="active"{% endif %} style="display:flex;align-items:center;gap:5px;">🧾 Doc Generator</a>
+  <a href="/invoice" {% if active=='invoice' %}class="active"{% endif %} style="display:flex;align-items:center;gap:6px;color:rgba(255,255,255,.85);text-decoration:none;padding:12px 16px;font-size:13.5px;font-weight:500;border-bottom:2px solid transparent;transition:all .2s;">🧾 Doc Generator</a>
   {% if session.role in ['admin', 'finance', 'sales', 'operations'] %}
-  <a href="/reports" {% if active=='reports' %}class="active"{% endif %} style="display:flex;align-items:center;gap:5px;">📊 Reports</a>
+  <a href="/reports" {% if active=='reports' %}class="active"{% endif %} style="display:flex;align-items:center;gap:6px;color:rgba(255,255,255,.85);text-decoration:none;padding:12px 16px;font-size:13.5px;font-weight:500;border-bottom:2px solid transparent;transition:all .2s;">📊 Reports</a>
   {% endif %}
   {% if session.role in ['admin', 'finance'] %}
-  <a href="/analytics" {% if active=='analytics' %}class="active"{% endif %} style="display:flex;align-items:center;gap:5px;">📈 Analytics</a>
-  <a href="/partner-commissions" {% if active=='partner-commissions' %}class="active"{% endif %} style="display:flex;align-items:center;gap:5px;">💰 Commissions</a>
+  <a href="/analytics" {% if active=='analytics' %}class="active"{% endif %} style="display:flex;align-items:center;gap:6px;color:rgba(255,255,255,.85);text-decoration:none;padding:12px 16px;font-size:13.5px;font-weight:500;border-bottom:2px solid transparent;transition:all .2s;">📈 Analytics</a>
+  <a href="/partner-commissions" {% if active=='partner-commissions' %}class="active"{% endif %} style="display:flex;align-items:center;gap:6px;color:rgba(255,255,255,.85);text-decoration:none;padding:12px 16px;font-size:13.5px;font-weight:500;border-bottom:2px solid transparent;transition:all .2s;">💰 Commissions</a>
   {% endif %}
   <div style="flex:1;"></div>
   {% if session.role == 'admin' %}
-  <a href="/admin" class="admin-link {% if active=='admin' %}active{% endif %}" style="display:flex;align-items:center;gap:5px;">⚙ Admin</a>
+  <a href="/admin" class="admin-link {% if active=='admin' %}active{% endif %}" style="display:flex;align-items:center;gap:6px;color:rgba(255,255,255,.85);text-decoration:none;padding:12px 16px;font-size:13.5px;font-weight:500;border-bottom:2px solid transparent;transition:all .2s;">⚙ Admin</a>
   {% endif %}
-  <div style="width:32px;height:32px;background:rgba(255,255,255,0.15);border-radius:50%;display:flex;align-items:center;justify-content:center;color:white;font-size:12px;font-weight:700;">{{ session.user_name[:2].upper() if session.user_name else 'U' }}</div>
+  <div style="width:32px;height:32px;background:rgba(255,255,255,0.2);border-radius:50%;display:flex;align-items:center;justify-content:center;color:white;font-size:12px;font-weight:700;border:1px solid rgba(255,255,255,.3);">{{ session.user_name[:2].upper() if session.user_name else 'U' }}</div>
 </div>
+<style>
+.nav a:hover {
+  background:rgba(255,255,255,.1);
+  color:white !important;
+}
+.nav a.active {
+  background:rgba(255,255,255,.15);
+  border-bottom-color:#D4AF37 !important;
+  color:white !important;
+  font-weight:600;
+}
+</style>
 {% endmacro %}
 
 {% macro welcome(now) %}
