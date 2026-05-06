@@ -282,11 +282,9 @@ document.addEventListener('DOMContentLoaded', function() {
   var today = new Date().toISOString().split('T')[0];
   document.getElementById('invDate').value = today;
   document.getElementById('invsDate').value = today;
-  document.getElementById('qtDate').value = today;
   genNos();
   addRow('inv'); addRow('inv'); addRow('inv');
   addRow('invs'); addRow('invs'); addRow('invs');
-  addRow('qt'); addRow('qt'); addRow('qt');
   addItem('invRemList','Remark...','Government receipt will be provided for all government charges; no tax is applicable on govt fees.');
   addItem('invRemList','Remark...','Payments made for government fees and third-party charges are non-refundable once processing has started.');
   addItem('invRemList','Remark...','Processing timelines are subject to approval from relevant UAE authorities.');
@@ -320,7 +318,6 @@ function genNos() {
   var n = Math.floor(10000 + Math.random()*90000);
   document.getElementById('invNo').value = 'INV-'+n;
   document.getElementById('invsNo').value = 'INV-'+(n+2);
-  document.getElementById('qtNo').value = 'QTN-'+(n+1);
 }
 
 // ── Add/remove addable items ─────────────────────────────────
@@ -484,8 +481,7 @@ function docHeader(type, no, date, note, billTo, validUntil) {
     '<div class="dd-row"><span class="k">Date:</span><span class="v">'+fmtDate(date)+'</span></div>';
   if(validUntil) metaRight+='<div class="dd-row"><span class="k">Valid Until:</span><span class="v">'+fmtDate(validUntil)+'</span></div>';
   return '<div class="pv-hdr">'+
-    '<div><img src="'+LOGO+'" alt="Tahfeel" style="height:60px;object-fit:contain;" onerror="this.style.display=\'none\'">'+
-    '<div style="font-size:9px;font-weight:600;color:#1A3B8B;letter-spacing:1px;margin-top:3px;">We Make Business Happen</div></div>'+
+    '<div><img src="/static/img/logo_transparent.png" alt="Tahfeel Holidays" style="height:65px;object-fit:contain;" onerror="this.style.display=\'none\'"></div>'+
     '<div class="pv-hdr-right"><div class="pv-dtype">'+type+'</div>'+
     '<div class="pv-co-info">TRN: 104627774300003<br>Wasl Ivory, Shop No.7, Al Karama, Dubai - UAE<br>+971 50 394 5656 | Info@tahfeel.ae</div></div></div>'+
     '<div class="pv-div"></div>'+
@@ -557,13 +553,14 @@ function totalsHtml(d, remarks) {
 function bankSigHtml() {
   return '<div class="pv-bank-sig">'+
     '<div class="pv-bank"><h4>Bank Details</h4><p>'+
-    '<strong>Tahfeel Business Setup Services</strong><br>'+
-    'Bank: ADCB — Karama Branch<br>'+
-    'Account No: 12204966920001<br>'+
-    'IBAN: AE520030012204966920001<br>'+
-    'Swift Code: ADCBAEAA</p></div>'+
+    '<strong>TAHFEEL HOLIDAYS LLC</strong><br>'+
+    'Bank: ADCB — Al Karamah Branch<br>'+
+    'Account No: 13771712820001<br>'+
+    'IBAN: AE540030013771712820001<br>'+
+    'Swift Code: ADCBAEAA<br>'+
+    'Currency: AED ONLY</p></div>'+
     '<div class="pv-sig"><div class="pv-sig-line"></div><p>Authorised Signature</p>'+
-    '<p style="font-weight:700;color:#1A3B8B;margin-top:2px;">Tahfeel Business Setup Services</p></div>'+
+    '<p style="font-weight:700;color:#0EA5E9;margin-top:2px;">Tahfeel Holidays LLC</p></div>'+
     '</div>';
 }
 
@@ -662,160 +659,13 @@ function previewInvs() {
   showPreview(html);
 }
 
-// ── QUOTATION PREVIEW ─────────────────────────────────────────
-function previewQt() {
-  var cn=document.getElementById('qtCustName').value||'';
-  var cp=document.getElementById('qtCustPhone').value||'';
-  if(!cn){alert('Please enter Customer Name');return;}
-  if(!cp){alert('Please enter Phone Number');return;}
-  var d=getRows('qt');
-  var billTo='<strong>'+cn+'</strong>';
-  var co=document.getElementById('qtCustCo').value;
-  var em=document.getElementById('qtCustEmail').value;
-  var ad=document.getElementById('qtCustAddr').value;
-  if(co) billTo+='<br>'+co;
-  if(cp) billTo+='<br>'+cp;
-  if(em) billTo+='<br>'+em;
-  if(ad) billTo+='<br>'+ad;
-  var tc=getItems('qtTcList');
-  var docs=getItems('qtDocList');
-  var notes=getItems('qtNoteList');
-  var staffName=document.getElementById('qtStaffName').value||'';
-  var staffMobile=document.getElementById('qtStaffMobile').value||'';
-
-  // Page 1 - Cover image
-  var pg1='<div style="width:210mm;height:297mm;overflow:hidden;page-break-after:always;"><img src="'+COVER+'" style="width:100%;height:100%;object-fit:cover;display:block;"></div>';
-
-  // Page 2 - Company profile image
-  var pg2='<div style="width:210mm;height:297mm;overflow:hidden;page-break-after:always;"><img src="'+PROFILE+'" style="width:100%;height:100%;object-fit:cover;display:block;"></div>';
-
-  // Page 3 - Actual quotation
-  var pg3=PV_CSS+'<div style="width:210mm;min-height:297mm;position:relative;box-sizing:border-box;display:flex;flex-direction:column;">'+
-    docHeader('QUOTATION',document.getElementById('qtNo').value,document.getElementById('qtDate').value,document.getElementById('qtNote').value,billTo,document.getElementById('qtValid').value)+
-    itemsTable(d.items)+
-    totalsHtml(d,[])+
-    bankSigHtml()+
-    '<div class="pv-ft" style="position:absolute;bottom:0;left:0;right:0;"><span>www.tahfeel.ae</span><span>Thank you for choosing Tahfeel!</span><span>Info@tahfeel.ae | +971 50 394 5656</span></div></div>';
-
-  // Page 4 - T&C + Docs + Notes + Why Tahfeel + Contact + Bank
-  var pg4='<div style="page-break-before:always;width:210mm;min-height:297mm;padding:28px 36px;font-family:Arial,sans-serif;box-sizing:border-box;">';
-
-  if(tc.length>0){
-    pg4+='<div class="qt-section-head">Terms &amp; Conditions</div><ul class="qt-bullet-list">';
-    tc.forEach(function(t){pg4+='<li>'+t+'</li>';});
-    pg4+='</ul><br>';
-  }
-  if(docs.length>0){
-    pg4+='<div class="qt-section-head">Required Documents</div><ul class="qt-bullet-list">';
-    docs.forEach(function(t){pg4+='<li>'+t+'</li>';});
-    pg4+='</ul><br>';
-  }
-  if(notes.length>0){
-    pg4+='<div class="qt-section-head">Notes</div><ul class="qt-bullet-list">';
-    notes.forEach(function(t){pg4+='<li>'+t+'</li>';});
-    pg4+='</ul><br>';
-  }
-
-  // Why Tahfeel
-  pg4+='<div class="why-box"><div style="font-size:12px;font-weight:700;color:#1A3B8B;margin-bottom:10px;">🤝 Why Choose Tahfeel?</div>'+
-    '<p>✔ Over 20 years of experience in UAE business setup<br>'+
-    '✔ End-to-end PRO &amp; document clearance support<br>'+
-    '✔ Transparent pricing with no hidden charges<br>'+
-    '✔ Dedicated relationship manager for every client<br>'+
-    '✔ Fast processing with regular status updates<br>'+
-    '✔ Trusted by 10,000+ clients across Dubai</p></div>';
-
-  // Contact
-  pg4+='<div class="contact-box">'+
-    '<div style="font-size:11px;font-weight:700;color:#1A3B8B;margin-bottom:8px;">📞 Your Contact at Tahfeel</div>';
-  if(staffName) pg4+='<p><strong>'+staffName+'</strong>'+(staffMobile?' | '+staffMobile:'')+'</p>';
-  pg4+='<p style="margin-top:6px;">'+
-    '<strong>Tahfeel Business Setup Services LLC</strong><br>'+
-    'Wasl Ivory, Shop No.7, Al Karama, Dubai - UAE<br>'+
-    '+971 50 394 5656 | Info@tahfeel.ae | www.tahfeel.ae</p></div><br>';
-
-  // Bank details
-  pg4+='<div style="background:#F0FDF4;border-radius:8px;padding:14px 18px;border-left:4px solid #10B981;">'+
-    '<div style="font-size:11px;font-weight:700;color:#10B981;margin-bottom:6px;">🏦 Bank Details</div>'+
-    '<p style="font-size:11px;color:#1A2333;line-height:1.9;">'+
-    '<strong>Tahfeel Business Setup Services</strong><br>'+
-    'Bank: ADCB — Karama Branch<br>'+
-    'Account No: 12204966920001<br>'+
-    'IBAN: AE520030012204966920001<br>'+
-    'Swift Code: ADCBAEAA<br>'+
-    'TRN: 104627774300003</p></div>';
-
-  pg4+='</div>';
-
-  // Page 5 - Closing image
-  var pg5='<div style="page-break-before:always;width:210mm;height:297mm;overflow:hidden;"><img src="'+CLOSING+'" style="width:100%;height:100%;object-fit:cover;display:block;"></div>';
-
-  showPreview(pg1+pg2+pg3+pg4+pg5);
-}
-
-function showPreview(html) {
-  document.getElementById('pvPaper').innerHTML=html;
-  document.getElementById('pvOverlay').classList.add('show');
-  document.body.style.overflow='hidden';
-}
-
-function closePv() {
-  document.getElementById('pvOverlay').classList.remove('show');
-  document.body.style.overflow='';
-}
-
-function printDoc() {
-  if(!document.getElementById('pvOverlay').classList.contains('show')){
-    if(document.getElementById('invoiceSection').classList.contains('active')) previewInv();
-    else if(document.getElementById('invoice-serviceSection').classList.contains('active')) previewInvs();
-    else previewQt();
-    return;
-  }
-  setTimeout(function(){window.print();},300);
-}
-
-function resetInv() {
-  if(!confirm('Clear invoice?')) return;
-  ['invCustName','invCustCo','invCustPhone','invCustEmail','invCustAddr','invNote'].forEach(function(id){document.getElementById(id).value='';});
-  document.getElementById('invItemsBody').innerHTML='';
-  document.getElementById('invRemList').innerHTML='';
-  invRowN=0;
-  document.getElementById('invDate').value=new Date().toISOString().split('T')[0];
-  genNos();
-  addRow('inv');addRow('inv');addRow('inv');
-  addItem('invRemList','Remark...','Government receipt will be provided for all government charges; no tax is applicable on govt fees.');
-  addItem('invRemList','Remark...','Payments made for government fees and third-party charges are non-refundable once processing has started.');
-  addItem('invRemList','Remark...','Processing timelines are subject to approval from relevant UAE authorities.');
-  addItem('invRemList','Remark...','Client is responsible for providing accurate and complete documents/access on time.');
-  calcAll('inv');
-}
-
-function resetInvs() {
-  if(!confirm('Clear invoice?')) return;
-  ['invsType','invsNo','invsNote','invsCustName','invsCustEmail','invsCustPhone','invsCustAddr'].forEach(function(id){ document.getElementById(id).value=''; });
-  document.getElementById('invsType').value='INVOICE';
-  document.getElementById('invsItemsBody').innerHTML='';
-  document.getElementById('invsRemList').innerHTML='';
-  invsRowN=0;
-  document.getElementById('invsDate').value=new Date().toISOString().split('T')[0];
-  genNos();
-  addRow('invs');addRow('invs');addRow('invs');
-  addItem('invsRemList','Remark...','Payments made for services are non-refundable once processing has started.');
-  addItem('invsRemList','Remark...','Processing timelines are subject to approval from relevant UAE authorities.');
-  addItem('invsRemList','Remark...','Client is responsible for providing accurate and complete documents/access on time.');
-  calcAll('invs');
-}
-
-function resetQt() {
   if(!confirm('Clear quotation?')) return;
   ['qtCustName','qtCustCo','qtCustPhone','qtCustEmail','qtCustAddr','qtNote','qtStaffName','qtStaffMobile'].forEach(function(id){document.getElementById(id).value='';});
   document.getElementById('qtItemsBody').innerHTML='';
   ['qtTcList','qtDocList','qtNoteList'].forEach(function(id){document.getElementById(id).innerHTML='';});
   qtRowN=0;
-  document.getElementById('qtDate').value=new Date().toISOString().split('T')[0];
   document.getElementById('qtValid').value='';
   genNos();
-  addRow('qt');addRow('qt');addRow('qt');
   addItem('qtTcList','Enter term...','Co Tax Registration is provided as complimentary service.');
   addItem('qtTcList','Enter term...','All prices quoted are in AED (United Arab Emirates Dirham).');
   addItem('qtTcList','Enter term...','All fees are included; there are no additional charges except for the marketing fee.');
