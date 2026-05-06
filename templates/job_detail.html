@@ -93,7 +93,7 @@
           <div class="card-stat cs-blue"><div class="cs-left"><div class="cs-label">Invoiced</div><div class="cs-value" style="font-size:16px;">AED {{ '{:,.0f}'.format(job.amount_invoiced or 0) }}</div></div><div class="cs-icon cs-blue">📊</div></div>
           <div class="card-stat cs-green"><div class="cs-left"><div class="cs-label">Received</div><div class="cs-value" style="font-size:16px;">AED {{ '{:,.0f}'.format(job.amount_received or 0) }}</div></div><div class="cs-icon cs-green">✓</div></div>
           <div class="card-stat cs-red"><div class="cs-left"><div class="cs-label">Pending</div><div class="cs-value" style="font-size:16px;">AED {{ '{:,.0f}'.format((job.amount_invoiced or 0)-(job.amount_received or 0)) }}</div></div><div class="cs-icon cs-red">⚠</div></div>
-          {% if job.vendor_amount %}
+          {% if job.vendor_amount and job.vendor_amount > 0 %}
           <div class="card-stat cs-amber"><div class="cs-left"><div class="cs-label">Vendor Due</div><div class="cs-value" style="font-size:16px;">AED {{ '{:,.0f}'.format((job.vendor_amount or 0)-(job.vendor_paid or 0)) }}</div></div><div class="cs-icon cs-amber">🏢</div></div>
           {% endif %}
         </div>

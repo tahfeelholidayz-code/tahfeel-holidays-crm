@@ -59,24 +59,42 @@ def init_db():
         from sqlalchemy import inspect, text
         inspector = inspect(db.engine)
         
-        # Add vendor_id column if missing
+        # Add vendor columns to job table if missing
         if 'job' in inspector.get_table_names():
             columns = [col['name'] for col in inspector.get_columns('job')]
+            
+            # Add vendor_id
             if 'vendor_id' not in columns:
-                print("Adding vendor_id to job table...")
-                db.session.execute(text('ALTER TABLE job ADD COLUMN vendor_id INTEGER'))
-                db.session.commit()
-                print("✓ vendor_id added")
+                try:
+                    print("Adding vendor_id to job table...")
+                    db.session.execute(text('ALTER TABLE job ADD COLUMN vendor_id INTEGER'))
+                    db.session.commit()
+                    print("✓ vendor_id added")
+                except Exception as e:
+                    db.session.rollback()
+                    print(f"vendor_id add failed (may already exist): {e}")
+            
+            # Add vendor_amount
             if 'vendor_amount' not in columns:
-                print("Adding vendor_amount to job table...")
-                db.session.execute(text('ALTER TABLE job ADD COLUMN vendor_amount FLOAT DEFAULT 0'))
-                db.session.commit()
-                print("✓ vendor_amount added")
+                try:
+                    print("Adding vendor_amount to job table...")
+                    db.session.execute(text('ALTER TABLE job ADD COLUMN vendor_amount FLOAT DEFAULT 0'))
+                    db.session.commit()
+                    print("✓ vendor_amount added")
+                except Exception as e:
+                    db.session.rollback()
+                    print(f"vendor_amount add failed (may already exist): {e}")
+            
+            # Add vendor_paid
             if 'vendor_paid' not in columns:
-                print("Adding vendor_paid to job table...")
-                db.session.execute(text('ALTER TABLE job ADD COLUMN vendor_paid FLOAT DEFAULT 0'))
-                db.session.commit()
-                print("✓ vendor_paid added")
+                try:
+                    print("Adding vendor_paid to job table...")
+                    db.session.execute(text('ALTER TABLE job ADD COLUMN vendor_paid FLOAT DEFAULT 0'))
+                    db.session.commit()
+                    print("✓ vendor_paid added")
+                except Exception as e:
+                    db.session.rollback()
+                    print(f"vendor_paid add failed (may already exist): {e}")
         
         # Check and create default admin
         if 'user' in inspector.get_table_names():
@@ -101,6 +119,7 @@ def init_db():
                 print("✓ Default admin created: admin@tahfeel.ae / tahfeel2026")
     except Exception as e:
         print(f"DB init error (may be normal): {e}")
+        db.session.rollback()
 
 with app.app_context():
     init_db()
