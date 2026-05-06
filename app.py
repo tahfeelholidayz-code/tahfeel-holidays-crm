@@ -1696,7 +1696,7 @@ def admin_edit_staff(user_id):
             flash('That email is already in use')
             return redirect(url_for('admin_panel'))
         user.email = email
-    if new_role in ['staff', 'sales', 'operations', 'admin', 'finance']:
+    if new_role in ['staff', 'admin']:
         user.role = new_role
     if new_password:
         user.password = generate_password_hash(new_password)
@@ -2305,8 +2305,8 @@ def export_jobs():
 @app.route('/jobs/add', methods=['GET', 'POST'])
 @login_required
 def add_job():
-    if session.get('role') not in ['admin', 'operations']:
-        flash('Access denied — only Operations can add tasks')
+    if session.get('role') not in ['staff', 'admin']:
+        flash('Access denied')
         return redirect(url_for('jobs'))
     customers = Customer.query.order_by(Customer.name).all()
     job_types = ServiceType.query.order_by(ServiceType.name).all()
@@ -2420,9 +2420,8 @@ def job_detail(job_id):
     job = Job.query.get_or_404(job_id)
     now = now_dubai()
     role = session['role']
-    # Sales and operations can view all tasks (not just assigned ones)
-    # Only restrict if somehow a non-authorised role gets here
-    if role not in ['admin', 'sales', 'operations', 'finance', 'staff']:
+    # All authenticated users can view tasks
+    if role not in ['admin', 'staff']:
         flash('Access denied')
         return redirect(url_for('jobs'))
     if request.method == 'POST':
@@ -2439,11 +2438,11 @@ def job_detail(job_id):
             flash('Task is already marked Done. Contact Finance/Admin for changes.')
             return redirect(url_for('job_detail', job_id=job_id))
         # Block sales/staff from updating if pending finance approval
-        if job.status == 'Pending Finance Approval' and role in ['staff', 'sales']:
+        if job.status == 'Pending Finance Approval' and role == 'staff':
             flash('This task is pending finance approval. You cannot update it yet.')
             return redirect(url_for('job_detail', job_id=job_id))
         # Block sales/staff from updating if pending finance close
-        if job.status == 'Pending Finance Close' and role in ['staff', 'sales']:
+        if job.status == 'Pending Finance Close' and role == 'staff':
             flash('Work is complete. Awaiting finance to close this task.')
             return redirect(url_for('job_detail', job_id=job_id))
         remark = request.form.get('remark', '').strip()
@@ -2490,7 +2489,7 @@ def job_detail(job_id):
 @login_required
 def edit_job(job_id):
     job = Job.query.get_or_404(job_id)
-    if session.get('role') not in ['admin', 'operations']:
+    if session.get('role') not in ['staff', 'admin']:
         flash('Access denied — only Operations can edit tasks')
         return redirect(url_for('job_detail', job_id=job_id))
     if job.status == 'Closed' and session['role'] != 'admin':
@@ -2531,7 +2530,7 @@ def edit_job(job_id):
 @app.route('/jobs/<int:job_id>/delete')
 @login_required
 def delete_job(job_id):
-    if session['role'] not in ['admin', 'operations']:
+    if session['role'] not in ['staff', 'admin']:
         flash('Access denied')
         return redirect(url_for('jobs'))
     job = Job.query.get_or_404(job_id)
@@ -2545,7 +2544,7 @@ def delete_job(job_id):
 @app.route('/jobs/bulk-delete', methods=['POST'])
 @login_required
 def bulk_delete_jobs():
-    if session['role'] not in ['admin', 'operations']:
+    if session['role'] not in ['staff', 'admin']:
         flash('Access denied')
         return redirect(url_for('jobs'))
     ids = request.form.getlist('job_ids')
@@ -2780,7 +2779,7 @@ def edit_finance(job_id):
 @app.route('/jobs/<int:job_id>/partial_revenue/add', methods=['POST'])
 @login_required
 def add_partial_revenue(job_id):
-    if session['role'] not in ['finance', 'admin']:
+    if session['role'] not in ['staff', 'admin']:
         flash('Only Finance can record partial revenue')
         return redirect(url_for('job_detail', job_id=job_id))
     
@@ -2854,7 +2853,7 @@ def get_activities():
 @app.route('/activity')
 @login_required
 def activity_log():
-    if session['role'] not in ['sales', 'admin']:
+    if session['role'] not in ['staff', 'admin']:
         flash('Access denied')
         return redirect(url_for('dashboard'))
     now = now_dubai()
@@ -2868,7 +2867,7 @@ def activity_log():
 
     try:
         if session['role'] == 'admin':
-            sales_users = User.query.filter(User.role == 'staff', User.active == True).all()
+            sales_users = User.query.filter(User.role.in_(['staff', 'admin']), User.active == True).all()
             logs = ActivityLog.query.filter(
                 ActivityLog.log_date >= from_dt,
                 ActivityLog.log_date <= to_dt
@@ -2885,7 +2884,7 @@ def activity_log():
         sales_users = [] if session['role'] == 'admin' else [User.query.get(session['user_id'])]
         try:
             if session['role'] == 'admin':
-                sales_users = User.query.filter(User.role == 'staff', User.active == True).all()
+                sales_users = User.query.filter(User.role.in_(['staff', 'admin']), User.active == True).all()
         except:
             pass
 
@@ -2927,7 +2926,7 @@ def activity_log():
 @app.route('/activity/log', methods=['POST'])
 @login_required
 def save_activity():
-    if session['role'] not in ['sales', 'admin']:
+    if session['role'] not in ['staff', 'admin']:
         flash('Access denied')
         return redirect(url_for('dashboard'))
     log_date_str = request.form.get('log_date', now_dubai().date().strftime('%Y-%m-%d'))
