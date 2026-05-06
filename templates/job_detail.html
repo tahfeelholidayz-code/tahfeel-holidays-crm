@@ -84,7 +84,6 @@
             <div style="font-size:10px;font-weight:600;color:var(--text-muted);text-transform:uppercase;margin-bottom:3px;">Created</div>
             <div style="font-size:14px;color:var(--text-primary);">
               {{ job.created_at.strftime('%d %b %Y') }}
-              <span style="font-size:11px;color:var(--text-muted);margin-left:6px;">Finance: {% if job.finance_approved_at %}✓ {{ job.finance_approved_at.strftime('%d %b') }}{% else %}Pending{% endif %}</span>
             </div>
           </div>
         </div>
@@ -94,10 +93,9 @@
           <div class="card-stat cs-blue"><div class="cs-left"><div class="cs-label">Invoiced</div><div class="cs-value" style="font-size:16px;">AED {{ '{:,.0f}'.format(job.amount_invoiced or 0) }}</div></div><div class="cs-icon cs-blue">📊</div></div>
           <div class="card-stat cs-green"><div class="cs-left"><div class="cs-label">Received</div><div class="cs-value" style="font-size:16px;">AED {{ '{:,.0f}'.format(job.amount_received or 0) }}</div></div><div class="cs-icon cs-green">✓</div></div>
           <div class="card-stat cs-red"><div class="cs-left"><div class="cs-label">Pending</div><div class="cs-value" style="font-size:16px;">AED {{ '{:,.0f}'.format((job.amount_invoiced or 0)-(job.amount_received or 0)) }}</div></div><div class="cs-icon cs-red">⚠</div></div>
-          {% if job.status == 'Closed' %}
-          <div class="card-stat cs-purple"><div class="cs-left"><div class="cs-label">Revenue</div><div class="cs-value" style="font-size:16px;">AED {{ '{:,.0f}'.format(job.revenue or 0) }}</div></div><div class="cs-icon cs-purple">💰</div></div>
+          {% if job.vendor_amount %}
+          <div class="card-stat cs-amber"><div class="cs-left"><div class="cs-label">Vendor Due</div><div class="cs-value" style="font-size:16px;">AED {{ '{:,.0f}'.format((job.vendor_amount or 0)-(job.vendor_paid or 0)) }}</div></div><div class="cs-icon cs-amber">🏢</div></div>
           {% endif %}
-          <div class="card-stat {% if job.finance_approved_at %}cs-green{% else %}cs-amber{% endif %}"><div class="cs-left"><div class="cs-label">Finance</div><div class="cs-value" style="font-size:13px;">{% if job.finance_approved_at %}✓ Approved{% else %}Awaiting{% endif %}</div></div><div class="cs-icon {% if job.finance_approved_at %}cs-green{% else %}cs-amber{% endif %}">💰</div></div>
         </div>
 
         <!-- Completion Summary -->
@@ -109,38 +107,7 @@
         </div>
         {% endif %}
 
-        <!-- Edit Finance Details for Closed Tasks -->
-        {% if job.status in ['Closed', 'Closed - Pending Partner Commission'] and session.role in ['finance','admin'] %}
-        <div id="edit-finance-section" style="margin-top:12px;">
-          <button type="button" onclick="document.getElementById('finance-edit-form').style.display='block'; this.style.display='none';" class="btn-secondary" style="width:100%;">
-            📝 Edit Finance Details
-          </button>
-          <div id="finance-edit-form" style="display:none;margin-top:12px;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-md);padding:14px;">
-            <div style="font-size:13px;font-weight:700;color:var(--primary);margin-bottom:10px;">Edit Finance Details</div>
-            <form method="post" action="/jobs/{{ job.id }}/edit_finance">
-              <div class="form-row-2">
-                <div class="form-group"><label>Final Invoice Amount (AED)</label><input type="number" name="amount_invoiced" value="{{ job.amount_invoiced or '' }}" min="0" step="0.01"></div>
-                <div class="form-group"><label>Total Received (AED)</label><input type="number" name="amount_received" value="{{ job.amount_received or '' }}" min="0" step="0.01"></div>
-              </div>
-              <div class="form-group"><label>Revenue/Profit (AED)</label><input type="number" name="revenue" value="{{ job.revenue or '' }}" min="0" step="0.01"></div>
-              
-              <div class="form-group"><label>Additional Finance Notes (optional)</label><input type="text" name="finance_notes" maxlength="30" placeholder="Max 30 characters..."></div>
-              <div style="display:flex;gap:8px;">
-                <button type="submit" class="btn-primary">Save Changes</button>
-                <button type="button" onclick="document.getElementById('finance-edit-form').style.display='none'; document.querySelector('#edit-finance-section button').style.display='block';" class="btn-secondary">Cancel</button>
-              </div>
-            </form>
-          </div>
-        </div>
-        {% endif %}
-
         <!-- Notes -->
-        {% if job.finance_notes %}
-        <div style="background:#FFF8F0;border:1px solid #F0D9B8;border-radius:var(--radius-md);padding:12px 14px;margin-top:10px;">
-          <div style="font-size:10px;font-weight:600;color:var(--text-muted);text-transform:uppercase;margin-bottom:4px;">Finance Notes</div>
-          <div style="font-size:13px;">{{ job.finance_notes }}</div>
-        </div>
-        {% endif %}
         {% if job.internal_notes %}
         <div style="background:#FFF8F0;border:1px solid #F0D9B8;border-radius:var(--radius-md);padding:12px 14px;margin-top:8px;">
           <div style="font-size:10px;font-weight:600;color:var(--text-muted);text-transform:uppercase;margin-bottom:4px;">Internal Notes</div>
@@ -164,34 +131,7 @@
     </div>
     {% endif %}
 
-    <!-- Finance: Approval form -->
-    {% if session.role in ['finance','admin'] and job.status == 'Done' %}
-    <div class="card" style="margin-bottom:12px;">
-      <div class="card-header"><h2 style="color:var(--success);">✓ Finance Approval</h2></div>
-      <div class="card-body">
-        <form method="post" action="/jobs/{{ job.id }}/approve">
-          <div class="form-row-2">
-            <div class="form-group"><label>Invoice Amount (AED)</label><input type="number" name="amount_invoiced" value="{{ job.amount_invoiced or '' }}" min="0" step="0.01" placeholder="0"></div>
-            <div class="form-group"><label>Amount Received (AED)</label><input type="number" name="amount_received" value="{{ job.amount_received or '' }}" min="0" step="0.01" placeholder="0"></div>
-          </div>
-          <div class="form-group"><label>Finance Notes (optional)</label><input type="text" name="finance_notes" maxlength="30" placeholder="Max 30 characters..." value="{{ job.finance_notes or '' }}"></div>
-          <button type="submit" class="btn-primary" style="background:var(--success);">Approve & Start Task</button>
-        </form>
-      </div>
-    </div>
-    {% endif %}
 
-    <!-- Finance: Close form -->
-    {% if session.role in ['finance','admin'] and job.status in ['Done', 'Pending Finance Close'] %}
-    <div class="card" style="margin-bottom:12px;">
-      <div class="card-header"><h2 style="color:var(--primary);">✓ Finance Close — Final Step</h2></div>
-      <div class="card-body">
-        <div style="font-size:13px;color:var(--text-secondary);margin-bottom:14px;">Staff has completed the work. Verify payment and close this task.</div>
-        {% if job.final_remarks %}
-        <div style="background:var(--bg);border-radius:var(--radius-sm);padding:10px;margin-bottom:12px;font-size:13px;">
-          <strong style="font-size:10px;text-transform:uppercase;color:var(--text-muted);">Staff Final Remarks:</strong><br>{{ job.final_remarks }}
-        </div>
-        {% endif %}
         <form method="post" action="/jobs/{{ job.id }}/close" id="closeTaskForm">
           <div style="background:#F0F9FF;border:1px solid #BAE6FD;border-radius:var(--radius-sm);padding:12px;margin-bottom:14px;">
             <div style="font-size:11px;font-weight:700;color:#0369A1;text-transform:uppercase;margin-bottom:8px;">Customer Payment</div>
@@ -307,22 +247,6 @@
     </div>
     {% endif %}
 
-    <!-- Finance: Update payment -->
-    {% if session.role in ['finance','admin'] and job.status not in ['Done','Done'] %}
-    <div class="card" style="margin-bottom:12px;">
-      <div class="card-header"><h2>Update Payment</h2></div>
-      <div class="card-body">
-        <form method="post" action="/jobs/{{ job.id }}/payment">
-          <div class="form-row-2">
-            <div class="form-group"><label>Invoice Amount (AED)</label><input type="number" name="amount_invoiced" value="{{ job.amount_invoiced or '' }}" min="0" step="0.01"></div>
-            <div class="form-group"><label>Amount Received (AED)</label><input type="number" name="amount_received" value="{{ job.amount_received or '' }}" min="0" step="0.01"></div>
-          </div>
-          <div class="form-group"><label>Finance Notes (optional)</label><input type="text" name="finance_notes" maxlength="30" placeholder="Max 30 characters..." value="{{ job.finance_notes or '' }}"></div>
-          <button type="submit" class="btn-primary">Update Payment</button>
-        </form>
-      </div>
-    </div>
-    {% endif %}
 
     <!-- Partial Revenue Tracking -->
     {% if session.role in ['finance','admin'] and job.status not in ['Closed', 'Closed - Pending Partner Commission'] %}
@@ -502,7 +426,7 @@
           <div style="display:flex;align-items:center;gap:10px;">
             <div style="width:36px;height:36px;background:#133E87;border-radius:8px;display:flex;align-items:center;justify-content:center;color:white;font-weight:800;font-size:15px;flex-shrink:0;">T</div>
             <div>
-              <div style="font-size:12px;font-weight:800;color:#133E87;line-height:1.2;">Tahfeel Business Setup Services</div>
+              <div style="font-size:12px;font-weight:800;color:#133E87;line-height:1.2;">Tahfeel Holidays LLC</div>
               <div style="font-size:9px;color:#94A3B8;margin-top:1px;">Application Status Update · Dubai, UAE</div>
             </div>
           </div>
@@ -621,7 +545,7 @@
 
         <!-- Footer -->
         <div style="padding-top:10px;border-top:1px solid #F1F5F9;display:flex;justify-content:space-between;align-items:center;">
-          <div style="font-size:8px;color:#CBD5E1;">Tahfeel Business Setup Services · Dubai, UAE</div>
+          <div style="font-size:8px;color:#CBD5E1;">Tahfeel Holidays LLC · Dubai, UAE</div>
           <div style="font-size:8px;color:#CBD5E1;">info@tahfeelbusiness.com</div>
         </div>
       </div>
@@ -650,7 +574,7 @@
       : "We are actively working on your application and will keep you informed at every step.";
     const msg = `Dear ${name},
 
-Thank you for choosing Tahfeel Business Setup Services.
+Thank you for choosing Tahfeel Holidays LLC.
 
 Here is the latest update on your application:
 
@@ -664,7 +588,7 @@ ${closing}
 
 For any queries, feel free to reach out to us anytime.
 
-— *Tahfeel Business Setup Services* 🏢
+— *Tahfeel Holidays LLC* 🏢
 Dubai, UAE`;
     const url = "https://wa.me/" + phone + "?text=" + encodeURIComponent(msg);
     window.open(url, "_blank");

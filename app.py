@@ -254,7 +254,7 @@ class Job(db.Model):
     assigned_to = db.Column(db.Integer, db.ForeignKey('user.id'))
     due_date = db.Column(db.DateTime)
     priority = db.Column(db.String(20), default='Medium')
-    status = db.Column(db.String(50), default='Pending Finance Approval')
+    status = db.Column(db.String(50), default='Assigned')
     internal_notes = db.Column(db.Text)
     service_note = db.Column(db.String(200))
     amount_invoiced = db.Column(db.Float, default=0)
@@ -592,8 +592,8 @@ def dashboard():
                 jobs = [j for j in all_jobs if j.created_at and j.created_at.year == now.year and j.created_at.month == now.month]
             
             active_jobs = [j for j in jobs if j.status != 'Done']
-            pending_approval = [j for j in jobs if j.status in ['Pending Finance Approval', 'Done']]
-            pending_close = [j for j in jobs if j.status == 'Pending Finance Close']
+            pending_approval = [j for j in jobs if j.status in ['Assigned', 'Done']]
+            pending_close = [j for j in jobs if j.status == 'Processing']
             total_invoiced = sum((j.amount_invoiced or 0) for j in active_jobs)
             total_received = sum((j.amount_received or 0) for j in active_jobs)
             total_pending = total_invoiced - total_received
@@ -674,7 +674,7 @@ def dashboard():
         except:
             docs_30 = docs_60 = docs_90 = total_docs = 0
         all_active_jobs = Job.query.filter(Job.status.notin_(['Closed'])).all()
-        tasks_active = len([j for j in all_active_jobs if j.status not in ['Pending Finance Approval','Pending Finance Close','Closed']])
+        tasks_active = len([j for j in all_active_jobs if j.status not in ['Assigned','Processing','Closed']])
         tasks_overdue = len([j for j in all_active_jobs if j.due_date and j.due_date < now and j.status not in ['Closed','Done']])
         tasks_processing = len([j for j in all_active_jobs if j.status == 'Processing'])
         tasks_pending_approval = len(pending_approval)
@@ -801,10 +801,10 @@ def dashboard():
             except:
                 total_revenue = 0
                 total_partner_pending = 0
-            overdue_jobs = [j for j in jobs if j.due_date and j.due_date < now and j.status not in ['Done', 'Pending Finance Approval']]
-            pending_approval = [j for j in jobs if j.status == 'Pending Finance Approval']
-            pending_close = [j for j in jobs if j.status == 'Pending Finance Close']
-            recent_jobs = [j for j in all_jobs if j.status not in ['Done', 'Closed', 'Pending Finance Approval']][:10]
+            overdue_jobs = [j for j in jobs if j.due_date and j.due_date < now and j.status not in ['Done', 'Assigned']]
+            pending_approval = [j for j in jobs if j.status == 'Assigned']
+            pending_close = [j for j in jobs if j.status == 'Processing']
+            recent_jobs = [j for j in all_jobs if j.status not in ['Done', 'Closed', 'Assigned']][:10]
         except:
             jobs = all_jobs = active_jobs = done_jobs = closed_jobs = overdue_jobs = pending_approval = pending_close = recent_jobs = []
             total_invoiced = total_received = total_pending = completed_value = customer_advances = total_revenue = 0
@@ -844,7 +844,7 @@ def dashboard():
             # Sales value: credited to the customer's representative (assigned_to on customer)
             u_sales_jobs = [j for j in all_jobs_db if j.customer and j.customer.assigned_to == u.id and in_period(j.created_at, wl_filter)]
             u_sales_closed = [j for j in all_jobs_db if j.customer and j.customer.assigned_to == u.id and j.status == 'Closed']
-            u_invoiced = sum((j.amount_invoiced or 0) for j in u_sales_jobs if j.status not in ['Pending Finance Approval'])
+            u_invoiced = sum((j.amount_invoiced or 0) for j in u_sales_jobs if j.status not in ['Assigned'])
             u_closed_val = sum((j.amount_received or 0) for j in u_sales_closed)
             
             # Initiated = leads where staff took action (status NOT "New")
@@ -872,8 +872,8 @@ def dashboard():
                 'overdue_leads': len([l for l in u_leads if l.due_date and l.due_date < now and l.status not in ['Converted','Lost']]),
                 'conversions': len([l for l in u_leads if l.status == 'Converted']),
                 'lost': len([l for l in u_leads if l.status == 'Lost']),
-                'active_jobs': len([j for j in u_jobs_all if j.status not in ['Done','Closed','Pending Finance Approval']]),
-                'overdue_jobs': len([j for j in u_jobs_all if j.due_date and j.due_date < now and j.status not in ['Done','Closed','Pending Finance Approval']]),
+                'active_jobs': len([j for j in u_jobs_all if j.status not in ['Done','Closed','Assigned']]),
+                'overdue_jobs': len([j for j in u_jobs_all if j.due_date and j.due_date < now and j.status not in ['Done','Closed','Assigned']]),
                 'invoiced': u_invoiced,
                 'closed_val': u_closed_val,
                 'revenue': u_revenue,
@@ -941,9 +941,9 @@ def dashboard():
     initiated = [l for l in leads if l.status not in ['New', 'Converted', 'Lost']]
     try:
         my_jobs = Job.query.filter_by(assigned_to=session['user_id']).filter(Job.status.notin_(['Done','Closed'])).order_by(Job.due_date).all()
-        pending_approval_jobs = [j for j in my_jobs if j.status == 'Pending Finance Approval']
-        overdue_jobs = [j for j in my_jobs if j.due_date and j.due_date < now and j.status != 'Pending Finance Approval']
-        active_jobs = [j for j in my_jobs if j.status != 'Pending Finance Approval']
+        pending_approval_jobs = [j for j in my_jobs if j.status == 'Assigned']
+        overdue_jobs = [j for j in my_jobs if j.due_date and j.due_date < now and j.status != 'Assigned']
+        active_jobs = [j for j in my_jobs if j.status != 'Assigned']
         total_invoiced = sum((j.amount_invoiced or 0) for j in active_jobs)
         total_received = sum((j.amount_received or 0) for j in active_jobs)
         total_pending = total_invoiced - total_received
@@ -2251,7 +2251,7 @@ def jobs():
                     td = datetime.strptime(to_date, '%Y-%m-%d').date()
                     job_list = [j for j in job_list if j.due_date and j.due_date.date() <= td]
                 except: pass
-        overdue = [j for j in job_list if j.due_date and j.due_date < now and j.status not in ['Done', 'Pending Finance Approval']]
+        overdue = [j for j in job_list if j.due_date and j.due_date < now and j.status not in ['Done', 'Assigned']]
         users = User.query.filter_by(active=True).filter(User.role.in_(['staff', 'admin'])).all()
         jobs_invoiced = sum((j.amount_invoiced or 0) for j in job_list)
         jobs_received = sum((j.amount_received or 0) for j in job_list)
@@ -2355,11 +2355,11 @@ def add_job():
             vendor_paid=0,
             num_persons=int(request.form.get('num_persons') or 1),
             created_by=session['user_id'],
-            status='Pending Finance Approval'
+            status='Assigned'
         )
         db.session.add(job)
         db.session.commit()
-        update = JobUpdate(job_id=job.id, status='Pending Finance Approval',
+        update = JobUpdate(job_id=job.id, status='Assigned',
                            remark='Task created — awaiting finance approval',
                            staff_name=session['user_name'])
         db.session.add(update)
@@ -2420,7 +2420,7 @@ def add_job():
                 num_persons=ep,
                 internal_notes=extra_notes[i] if i < len(extra_notes) else None,
                 service_note=extra_service_notes[i].strip() if i < len(extra_service_notes) and extra_service_notes[i].strip() else None,
-                status='Pending Finance Approval',
+                status='Assigned',
                 created_by=session['user_id']
             )
             db.session.add(extra_job)
@@ -2455,16 +2455,16 @@ def job_detail(job_id):
         if job.status == 'Closed' and role not in ['admin']:
             flash('This task is closed. No further updates allowed.')
             return redirect(url_for('job_detail', job_id=job_id))
-        # Done/Pending Finance Close — no further updates from non-admin/finance
-        if job.status in ['Done', 'Pending Finance Close'] and role not in ['admin']:
+        # Done/Processing — no further updates from non-admin/finance
+        if job.status in ['Done', 'Processing'] and role not in ['admin']:
             flash('Task is already marked Done. Contact Finance/Admin for changes.')
             return redirect(url_for('job_detail', job_id=job_id))
         # Block sales/staff from updating if pending finance approval
-        if job.status == 'Pending Finance Approval' and role == 'staff':
+        if job.status == 'Assigned' and role == 'staff':
             flash('This task is pending finance approval. You cannot update it yet.')
             return redirect(url_for('job_detail', job_id=job_id))
         # Block sales/staff from updating if pending finance close
-        if job.status == 'Pending Finance Close' and role == 'staff':
+        if job.status == 'Processing' and role == 'staff':
             flash('Work is complete. Awaiting finance to close this task.')
             return redirect(url_for('job_detail', job_id=job_id))
         remark = request.form.get('remark', '').strip()
@@ -2472,15 +2472,15 @@ def job_detail(job_id):
             flash('Remark is required')
             return redirect(url_for('job_detail', job_id=job_id))
         new_status = request.form.get('status', job.status)
-        if role == 'staff' and new_status == 'Pending Finance Approval':
+        if role == 'staff' and new_status == 'Assigned':
             new_status = job.status
         # When ops marks Done → stays as Done, appears in Finance queue
         # Finance will verify payment and close the task
         if new_status == 'Done' and role not in ['admin']:
             pass  # Keep as Done — Finance will close it
         job.status = new_status
-        # Save completion fields when marking Done or Pending Finance Close
-        if new_status in ['Done', 'Pending Finance Close']:
+        # Save completion fields when marking Done or Processing
+        if new_status in ['Done', 'Processing']:
             if not job.completed_at:
                 job.completed_at = now_dubai()
             job.final_remarks = request.form.get('final_remarks') or None
@@ -2601,7 +2601,7 @@ def approve_job(job_id):
             job.amount_received = float(amount_received)
     except:
         pass
-    # If task was Done, Finance is closing it; if Pending Finance Approval, Finance is approving it
+    # If task was Done, Finance is closing it; if Assigned, Finance is approving it
     if job.status == 'Done':
         job.status = 'Closed'
         job.completed_at = now_dubai()
@@ -3718,7 +3718,7 @@ def my_desk():
     # Monthly targets + workload
     target = MonthlyTarget.query.filter_by(user_id=user_id, month=now.month, year=now.year).first()
     my_jobs_all = Job.query.filter_by(assigned_to=user_id).all()
-    invoiced_actual = sum((j.amount_invoiced or 0) for j in my_jobs_all if j.status not in ['Pending Finance Approval'])
+    invoiced_actual = sum((j.amount_invoiced or 0) for j in my_jobs_all if j.status not in ['Assigned'])
     closed_actual = sum((j.amount_received or 0) for j in my_jobs_all if j.status == 'Closed')
     amount_target = (target.amount_target or 0) if target else 0
     # Workload this month
@@ -3730,8 +3730,8 @@ def my_desk():
     my_conversions_count = len([l for l in my_leads_month if l.status == 'Converted'])
     my_lost_count = len([l for l in my_leads_month if l.status == 'Lost'])
     my_overdue_leads = len([l for l in my_leads_month if l.due_date and l.due_date < now and l.status not in ['Converted','Lost']])
-    my_active_tasks = len([j for j in my_jobs_all if j.status not in ['Done','Closed','Pending Finance Approval']])
-    my_overdue_tasks = len([j for j in my_jobs_all if j.due_date and j.due_date < now and j.status not in ['Done','Closed','Pending Finance Approval']])
+    my_active_tasks = len([j for j in my_jobs_all if j.status not in ['Done','Closed','Assigned']])
+    my_overdue_tasks = len([j for j in my_jobs_all if j.due_date and j.due_date < now and j.status not in ['Done','Closed','Assigned']])
 
     # Create table if not exists
     try:
@@ -4007,7 +4007,7 @@ def analytics():
         month_jobs = Job.query.filter(
             db.extract('month', Job.created_at) == m,
             db.extract('year', Job.created_at) == y,
-            Job.status.notin_(['Pending Finance Approval'])
+            Job.status.notin_(['Assigned'])
         ).all()
         inv = sum(j.amount_invoiced or 0 for j in month_jobs)
         rec = sum(j.amount_received or 0 for j in month_jobs)
@@ -4030,7 +4030,7 @@ def analytics():
             continue
         u_leads = [l for l in all_leads if l.assigned_to == u.id]
         u_sales = [j for j in all_jobs if j.customer and j.customer.assigned_to == u.id]
-        u_inv = sum(j.amount_invoiced or 0 for j in u_sales if j.status not in ['Pending Finance Approval'])
+        u_inv = sum(j.amount_invoiced or 0 for j in u_sales if j.status not in ['Assigned'])
         u_conv = len([l for l in u_leads if l.status in won_s])
         conv_rate = round(u_conv / len(u_leads) * 100) if u_leads else 0
         
@@ -4069,7 +4069,7 @@ def analytics():
     # ── Operations stats
     total_jobs = len(all_jobs)
     completed_jobs = [j for j in all_jobs if j.status in ['Done','Closed']]
-    active_jobs_ops = [j for j in all_jobs if j.status not in ['Done','Closed','Pending Finance Approval']]
+    active_jobs_ops = [j for j in all_jobs if j.status not in ['Done','Closed','Assigned']]
     overdue_jobs = [j for j in all_jobs if j.due_date and j.due_date.date() < today and j.status not in ['Done','Closed']]
     job_type_counts = Counter(j.job_type for j in all_jobs if j.job_type)
     top_job_types = job_type_counts.most_common(6)
