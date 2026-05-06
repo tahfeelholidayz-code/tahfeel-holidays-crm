@@ -494,6 +494,155 @@ input, select, textarea, button { font-family: var(--font); }
   display: flex;
 }
 
+/* ── Filters & Search ──────────────────────────────────── */
+.filters {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+  align-items: flex-end;
+}
+.search-bar {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 12px;
+}
+.search-bar input {
+  flex: 1;
+  height: 40px;
+  padding: 0 14px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 13.5px;
+  background: var(--surface);
+  color: var(--text-primary);
+  outline: none;
+  transition: var(--transition);
+}
+.search-bar input:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(13,77,77,.08);
+}
+.btn-search {
+  height: 40px;
+  padding: 0 18px;
+  background: var(--primary);
+  color: white;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition);
+}
+.btn-search:hover {
+  background: var(--primary-light);
+}
+.btn-clear {
+  height: 40px;
+  padding: 0 16px;
+  display: inline-flex;
+  align-items: center;
+  background: white;
+  color: var(--text-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  font-weight: 500;
+  text-decoration: none;
+  transition: var(--transition);
+}
+.btn-clear:hover {
+  border-color: var(--danger);
+  color: var(--danger);
+}
+.search-highlight {
+  background: var(--info-bg);
+  color: var(--info);
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  margin-bottom: 12px;
+}
+.filter-card {
+  background: white;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  padding: 16px;
+  margin-bottom: 16px;
+  box-shadow: var(--shadow-sm);
+}
+.filter-card-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border-light);
+}
+.filter-card-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.ff {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+.ff label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+.ff input,
+.ff select {
+  width: 100%;
+  height: 38px;
+  padding: 0 12px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 13.5px;
+  background: var(--surface);
+  color: var(--text-primary);
+  outline: none;
+  transition: var(--transition);
+}
+.ff input:focus,
+.ff select:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(13,77,77,.08);
+}
+
+/* ── Header Buttons ────────────────────────────────────── */
+.header-btns {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.btn-bulk-delete {
+  background: var(--danger-bg);
+  color: var(--danger);
+  border: 1px solid var(--danger);
+  padding: 8px 14px;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition);
+  display: none;
+}
+.btn-bulk-delete.active {
+  display: inline-block;
+}
+.btn-bulk-delete:hover {
+  background: var(--danger);
+  color: white;
+}
+
 /* ── Forms ─────────────────────────────────────────────── */
 .form-grid {
   display: grid;
