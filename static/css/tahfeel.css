@@ -868,21 +868,9 @@ table tr:hover,
   background: var(--purple-bg);
   color: var(--purple);
 }
-.badge-finance {
+.badge-staff {
   background: var(--info-bg);
   color: var(--info);
-}
-.badge-sales {
-  background: var(--success-bg);
-  color: var(--success);
-}
-.badge-operations {
-  background: var(--warning-bg);
-  color: var(--warning);
-}
-.badge-staff {
-  background: var(--border-light);
-  color: var(--text-secondary);
 }
 
 /* ── Login Page ────────────────────────────────────────── */

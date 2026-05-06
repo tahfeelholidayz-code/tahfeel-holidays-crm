@@ -409,7 +409,7 @@ def admin_required(f):
 def finance_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
-        if session.get('role') not in ['admin', 'finance']:
+        if session.get('role') not in ['admin']:
             flash('Finance access required')
             return redirect(url_for('dashboard'))
         return f(*args, **kwargs)
@@ -513,7 +513,7 @@ def dashboard():
     role = session['role']
 
     # ── Finance dashboard ────────────────────────────────────────────────────
-    if role == 'finance':
+    if role == 'staff':
         date_filter = request.args.get('date', 'month')  # Default to current month
         
         try:
@@ -941,7 +941,7 @@ def all_leads():
         return redirect(url_for('dashboard'))
     now = now_dubai()
     leads = Lead.query.order_by(Lead.due_date).all()
-    users = User.query.filter_by(active=True).filter(User.role.in_(['staff', 'sales', 'operations', 'admin'])).all()
+    users = User.query.filter_by(active=True).filter(User.role.in_(['staff', 'admin'])).all()
     search = request.args.get('search', '').strip().lower()
     is_default = not any(request.args.get(k) for k in ['date', 'status', 'staff', 'search', 'from', 'to'])
 
@@ -949,7 +949,7 @@ def all_leads():
     user_id = session.get('user_id')
 
     # For sales: default to their own leads unless staff filter explicitly set
-    if role == 'sales' and not request.args.get('staff'):
+    if role == 'staff' and not request.args.get('staff'):
         leads = [l for l in leads if l.assigned_to == user_id]
 
     if search:
@@ -979,7 +979,7 @@ def all_leads():
 @app.route('/leads/export')
 @login_required
 def export_leads():
-    if session['role'] not in ['admin', 'sales']:
+    if session['role'] not in ['admin']:
         flash('Access denied')
         return redirect(url_for('all_leads'))
     from openpyxl import Workbook
@@ -1024,7 +1024,7 @@ def export_leads():
 @login_required
 def add_lead():
     now = now_dubai()
-    users = User.query.filter_by(active=True).filter(User.role.in_(['staff', 'sales', 'operations', 'admin'])).all()
+    users = User.query.filter_by(active=True).filter(User.role.in_(['staff', 'admin'])).all()
     services = Service.query.order_by(Service.name).all()
     sources = Source.query.order_by(Source.name).all()
     if request.method == 'POST':
@@ -1088,7 +1088,7 @@ def lead_detail(lead_id):
 @app.route('/leads/import', methods=['GET', 'POST'])
 @login_required
 def import_leads():
-    if session.get('role') not in ['admin', 'sales']:
+    if session.get('role') not in ['admin']:
         flash('Access denied')
         return redirect(url_for('dashboard'))
     if request.method == 'POST':
@@ -1102,7 +1102,7 @@ def import_leads():
             ws = wb.active
             count = 0
             errors = []
-            all_staff = User.query.filter_by(active=True).filter(User.role.in_(['staff', 'sales', 'operations', 'admin'])).all()
+            all_staff = User.query.filter_by(active=True).filter(User.role.in_(['staff', 'admin'])).all()
             staff_map = {u.name.strip().lower(): u.id for u in all_staff}
             for i, row in enumerate(ws.iter_rows(min_row=2, values_only=True), start=2):
                 name = row[0] if len(row) > 0 else None
@@ -1174,7 +1174,7 @@ def download_template():
     import io
     services = Service.query.order_by(Service.name).all()
     sources = Source.query.order_by(Source.name).all()
-    staff = User.query.filter_by(active=True).filter(User.role.in_(['staff', 'sales', 'operations', 'admin'])).all()
+    staff = User.query.filter_by(active=True).filter(User.role.in_(['staff', 'admin'])).all()
     wb = Workbook()
     ws = wb.active
     ws.title = "Leads"
@@ -1252,7 +1252,7 @@ def download_template():
 def edit_lead(lead_id):
     now = now_dubai()
     lead = Lead.query.get_or_404(lead_id)
-    users = User.query.filter_by(active=True).filter(User.role.in_(['staff', 'sales', 'operations', 'admin'])).all()
+    users = User.query.filter_by(active=True).filter(User.role.in_(['staff', 'admin'])).all()
     services = Service.query.order_by(Service.name).all()
     sources = Source.query.order_by(Source.name).all()
     if request.method == 'POST':
@@ -1795,11 +1795,11 @@ def add_customer():
         if not request.form.get('lead_id'):
             if not request.form.get('source'):
                 flash('Source is required', 'error')
-                users = User.query.filter_by(active=True).filter(User.role.in_(['staff', 'sales', 'operations', 'admin'])).all()
+                users = User.query.filter_by(active=True).filter(User.role.in_(['staff', 'admin'])).all()
                 return render_template('add_customer.html', users=users, sources=sources, converted_leads=converted_leads)
             if not request.form.get('assigned_to'):
                 flash('Primary Representative is required', 'error')
-                users = User.query.filter_by(active=True).filter(User.role.in_(['staff', 'sales', 'operations', 'admin'])).all()
+                users = User.query.filter_by(active=True).filter(User.role.in_(['staff', 'admin'])).all()
                 return render_template('add_customer.html', users=users, sources=sources, converted_leads=converted_leads)
         
         # Check for duplicate phone number
@@ -1815,7 +1815,7 @@ def add_customer():
             existing_customer = Customer.query.filter_by(phone=phone_to_check).first()
             if existing_customer:
                 flash(f'⚠️ Duplicate customer! Phone number {phone_to_check} already exists for customer: {existing_customer.name}', 'error')
-                users = User.query.filter_by(active=True).filter(User.role.in_(['staff', 'sales', 'operations', 'admin'])).all()
+                users = User.query.filter_by(active=True).filter(User.role.in_(['staff', 'admin'])).all()
                 return render_template('add_customer.html', users=users, sources=sources, converted_leads=converted_leads)
         
         if lead_id:
@@ -1879,7 +1879,7 @@ def add_customer():
         db.session.commit()
         flash('Customer added successfully')
         return redirect(url_for('customer_detail', customer_id=customer.id))
-    users = User.query.filter_by(active=True).filter(User.role.in_(['sales','operations','admin'])).all()
+    users = User.query.filter_by(active=True).filter(User.role.in_(['staff', 'admin'])).all()
     doc_types = DocType.query.order_by(DocType.name).all()
     return render_template('add_customer.html', converted_leads=converted_leads, sources=sources, users=users, doc_types=doc_types)
 
@@ -1902,7 +1902,7 @@ def customer_detail(customer_id):
 def edit_customer(customer_id):
     customer = Customer.query.get_or_404(customer_id)
     sources = Source.query.order_by(Source.name).all()
-    users = User.query.filter_by(active=True).filter(User.role.in_(['sales','operations','admin'])).all()
+    users = User.query.filter_by(active=True).filter(User.role.in_(['staff', 'admin'])).all()
     if request.method == 'POST':
         customer.name = request.form.get('name', '').strip() or customer.name
         customer.company = request.form.get('company', '').strip()
@@ -2090,7 +2090,7 @@ def customer_import_template():
 @admin_required
 def import_customers():
     sources = Source.query.order_by(Source.name).all()
-    users = User.query.filter_by(active=True).filter(User.role.in_(['sales','operations','admin'])).all()
+    users = User.query.filter_by(active=True).filter(User.role.in_(['staff', 'admin'])).all()
     if request.method == 'POST':
         f = request.files.get('file')
         if not f or not f.filename.endswith('.xlsx'):
@@ -2141,7 +2141,7 @@ def jobs():
     try:
         # Exclude Done and Closed by default unless explicitly filtered
         if not status_filter:
-            if role in ['admin', 'finance']:
+            if role in ['admin']:
                 job_list = Job.query.all()
             else:
                 job_list = Job.query.filter(Job.status.notin_(['Done', 'Closed', 'Closed - Pending Partner Commission'])).order_by(Job.due_date.asc()).all()
@@ -2194,7 +2194,7 @@ def jobs():
                     job_list = [j for j in job_list if j.due_date and j.due_date.date() <= td]
                 except: pass
         overdue = [j for j in job_list if j.due_date and j.due_date < now and j.status not in ['Done', 'Pending Finance Approval']]
-        users = User.query.filter_by(active=True).filter(User.role.in_(['staff', 'sales', 'operations', 'admin'])).all()
+        users = User.query.filter_by(active=True).filter(User.role.in_(['staff', 'admin'])).all()
         jobs_invoiced = sum((j.amount_invoiced or 0) for j in job_list)
         jobs_received = sum((j.amount_received or 0) for j in job_list)
         jobs_pending = jobs_invoiced - jobs_received
@@ -2274,7 +2274,7 @@ def add_job():
         return redirect(url_for('jobs'))
     customers = Customer.query.order_by(Customer.name).all()
     job_types = ServiceType.query.order_by(ServiceType.name).all()
-    users = User.query.filter_by(active=True).filter(User.role.in_(['staff', 'sales', 'operations', 'admin'])).all()
+    users = User.query.filter_by(active=True).filter(User.role.in_(['staff', 'admin'])).all()
     if request.method == 'POST':
         due = request.form.get('due_date')
         due_dt = datetime.strptime(due, '%Y-%m-%d') if due else None
@@ -2385,15 +2385,15 @@ def job_detail(job_id):
         return redirect(url_for('jobs'))
     if request.method == 'POST':
         # Sales cannot update tasks at all
-        if role == 'sales':
+        if role == 'staff':
             flash('Sales cannot update task status. Contact Operations.')
             return redirect(url_for('job_detail', job_id=job_id))
         # Closed — no updates except admin/finance
-        if job.status == 'Closed' and role not in ['admin', 'finance']:
+        if job.status == 'Closed' and role not in ['admin']:
             flash('This task is closed. No further updates allowed.')
             return redirect(url_for('job_detail', job_id=job_id))
         # Done/Pending Finance Close — no further updates from non-admin/finance
-        if job.status in ['Done', 'Pending Finance Close'] and role not in ['admin', 'finance']:
+        if job.status in ['Done', 'Pending Finance Close'] and role not in ['admin']:
             flash('Task is already marked Done. Contact Finance/Admin for changes.')
             return redirect(url_for('job_detail', job_id=job_id))
         # Block sales/staff from updating if pending finance approval
@@ -2413,7 +2413,7 @@ def job_detail(job_id):
             new_status = job.status
         # When ops marks Done → stays as Done, appears in Finance queue
         # Finance will verify payment and close the task
-        if new_status == 'Done' and role not in ['admin', 'finance']:
+        if new_status == 'Done' and role not in ['admin']:
             pass  # Keep as Done — Finance will close it
         job.status = new_status
         # Save completion fields when marking Done or Pending Finance Close
@@ -2434,7 +2434,7 @@ def job_detail(job_id):
         db.session.commit()
         flash('Task updated')
         return redirect(url_for('job_detail', job_id=job_id))
-    users = User.query.filter_by(active=True).filter(User.role.in_(['staff', 'sales', 'operations', 'admin'])).all()
+    users = User.query.filter_by(active=True).filter(User.role.in_(['staff', 'admin'])).all()
     service_types = ServiceType.query.order_by(ServiceType.name).all()
     # All jobs for same customer (for multi-task timeline)
     sibling_jobs = Job.query.filter_by(customer_id=job.customer_id).order_by(Job.created_at.asc()).all()
@@ -2460,7 +2460,7 @@ def edit_job(job_id):
         return redirect(url_for('jobs'))
     customers = Customer.query.order_by(Customer.name).all()
     job_types = ServiceType.query.order_by(ServiceType.name).all()
-    users = User.query.filter_by(active=True).filter(User.role.in_(['staff', 'sales', 'operations', 'admin'])).all()
+    users = User.query.filter_by(active=True).filter(User.role.in_(['staff', 'admin'])).all()
     if request.method == 'POST':
         job.job_type = request.form['job_type']
         job.customer_id = int(request.form['customer_id'])
@@ -2826,7 +2826,7 @@ def activity_log():
 
     try:
         if session['role'] == 'admin':
-            sales_users = User.query.filter(User.role == 'sales', User.active == True).all()
+            sales_users = User.query.filter(User.role == 'staff', User.active == True).all()
             logs = ActivityLog.query.filter(
                 ActivityLog.log_date >= from_dt,
                 ActivityLog.log_date <= to_dt
@@ -2843,7 +2843,7 @@ def activity_log():
         sales_users = [] if session['role'] == 'admin' else [User.query.get(session['user_id'])]
         try:
             if session['role'] == 'admin':
-                sales_users = User.query.filter(User.role == 'sales', User.active == True).all()
+                sales_users = User.query.filter(User.role == 'staff', User.active == True).all()
         except:
             pass
 
@@ -3870,7 +3870,7 @@ def export_full_backup():
 @app.route('/analytics')
 @login_required
 def analytics():
-    if session.get('role') not in ['admin', 'finance']:
+    if session.get('role') not in ['admin']:
         flash('Access denied')
         return redirect(url_for('dashboard'))
 
@@ -4049,7 +4049,7 @@ def analytics():
     # ── Lead breakdown by staff and status (for pivot table)
     # Get all statuses and staff
     all_statuses = sorted(set(l.status for l in all_leads if l.status), key=lambda s: (s != 'New', s))  # "New" first, then alphabetical
-    sales_staff = [u for u in all_users if u.role == 'sales']  # Only Sales role, not admin
+    sales_staff = [u for u in all_users if u.role == 'staff']  # Only Sales role, not admin
     
     # Create breakdown: {status: {staff_name: count}}
     lead_breakdown = {}
@@ -4124,7 +4124,7 @@ else:
 @app.route('/partners')
 @login_required
 def partners():
-    if session['role'] not in ['admin', 'finance']:
+    if session['role'] not in ['admin']:
         flash('Access denied.')
         return redirect(url_for('dashboard'))
     
@@ -4134,7 +4134,7 @@ def partners():
 @app.route('/partners/add', methods=['POST'])
 @login_required
 def add_partner():
-    if session['role'] not in ['admin', 'finance']:
+    if session['role'] not in ['admin']:
         flash('Access denied.')
         return redirect(url_for('partners'))
     
@@ -4157,7 +4157,7 @@ def add_partner():
 @app.route('/partners/<int:partner_id>/edit', methods=['POST'])
 @login_required
 def edit_partner(partner_id):
-    if session['role'] not in ['admin', 'finance']:
+    if session['role'] not in ['admin']:
         flash('Access denied.')
         return redirect(url_for('partners'))
     
@@ -4183,7 +4183,7 @@ def edit_partner(partner_id):
 @app.route('/partners/<int:partner_id>/delete', methods=['POST'])
 @login_required
 def delete_partner(partner_id):
-    if session['role'] not in ['admin', 'finance']:
+    if session['role'] not in ['admin']:
         flash('Access denied.')
         return redirect(url_for('partners'))
     
@@ -4204,7 +4204,7 @@ def delete_partner(partner_id):
 @app.route('/partners/<int:partner_id>/toggle', methods=['POST'])
 @login_required
 def toggle_partner(partner_id):
-    if session['role'] not in ['admin', 'finance']:
+    if session['role'] not in ['admin']:
         flash('Access denied.')
         return redirect(url_for('partners'))
     
@@ -4218,7 +4218,7 @@ def toggle_partner(partner_id):
 @app.route('/partner-commissions')
 @login_required
 def partner_commissions():
-    if session['role'] not in ['admin', 'finance']:
+    if session['role'] not in ['admin']:
         flash('Access denied.')
         return redirect(url_for('dashboard'))
     
@@ -4278,7 +4278,7 @@ def partner_commissions():
 @app.route('/partner-commissions/<int:job_id>/mark-received', methods=['POST'])
 @login_required
 def mark_partner_received(job_id):
-    if session['role'] not in ['admin', 'finance']:
+    if session['role'] not in ['admin']:
         flash('Access denied.')
         return redirect(url_for('partner_commissions'))
     
