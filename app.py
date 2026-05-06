@@ -49,6 +49,41 @@ app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', 'sqlite:/
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
+# Auto-initialize database on startup
+def init_db():
+    """Initialize database tables and create default admin if needed"""
+    try:
+        db.create_all()
+        # Check and create default admin
+        from sqlalchemy import inspect
+        inspector = inspect(db.engine)
+        if 'user' in inspector.get_table_names():
+            admin_exists = db.session.execute(
+                db.text("SELECT COUNT(*) FROM \"user\" WHERE email='admin@tahfeel.ae'")
+            ).scalar()
+            if not admin_exists:
+                db.session.execute(
+                    db.text("""
+                        INSERT INTO "user" (name, email, password, role, active)
+                        VALUES (:name, :email, :password, :role, :active)
+                    """),
+                    {
+                        'name': 'Admin',
+                        'email': 'admin@tahfeel.ae',
+                        'password': generate_password_hash('tahfeel2026'),
+                        'role': 'admin',
+                        'active': True
+                    }
+                )
+                db.session.commit()
+                print("✓ Default admin created: admin@tahfeel.ae / tahfeel2026")
+    except Exception as e:
+        print(f"DB init error (may be normal): {e}")
+
+with app.app_context():
+    init_db()
+
+
 @app.errorhandler(500)
 def internal_error(error):
     db.session.rollback()
@@ -4320,3 +4355,30 @@ def admin_delete_partner(partner_id):
 # TEMPORARY ADMIN ROUTE - Fix April 30 Revenue Dates
 # ══════════════════════════════════════════════════════════════════════════════
 # ══════════════════════════════════════════════════════════════════════════════
+
+# ══════════════════════════════════════════════════════════════════════════════
+# DATABASE INITIALIZATION
+# ══════════════════════════════════════════════════════════════════════════════
+if __name__ == '__main__':
+    with app.app_context():
+        print("Initializing database...")
+        db.create_all()
+        print("✓ Tables created")
+        
+        # Create default admin if not exists
+        if not User.query.filter_by(email='admin@tahfeel.ae').first():
+            print("Creating default admin user...")
+            admin = User(
+                name='Admin',
+                email='admin@tahfeel.ae',
+                password=generate_password_hash('tahfeel2026'),
+                role='admin',
+                active=True
+            )
+            db.session.add(admin)
+            db.session.commit()
+            print("✓ Admin created: admin@tahfeel.ae / tahfeel2026")
+        else:
+            print("✓ Admin user already exists")
+    
+    app.run(debug=False, host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
