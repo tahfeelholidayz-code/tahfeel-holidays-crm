@@ -705,6 +705,76 @@ input, select, textarea, button { font-family: var(--font); }
   color: white;
 }
 
+/* ── Task Bar Layout ────────────────────────────────────── */
+.task-bar-row {
+  display: grid;
+  grid-template-columns: 4px 1fr;
+  gap: 0;
+  background: white;
+  border-radius: 8px;
+  margin-bottom: 6px;
+  box-shadow: 0 1px 3px rgba(0,0,0,.05);
+  overflow: hidden;
+  transition: var(--transition);
+}
+.task-bar-row:hover {
+  box-shadow: 0 2px 6px rgba(0,0,0,.08);
+}
+.task-bar {
+  width: 4px;
+  background: var(--border);
+}
+.bar-blue { background: var(--primary); }
+.bar-green { background: var(--success); }
+.bar-red { background: var(--danger); }
+.bar-amber { background: var(--warning); }
+.bar-purple { background: var(--purple); }
+.bar-grey { background: var(--text-muted); }
+.task-bar-body {
+  display: grid;
+  grid-template-columns: 1.3fr 0.8fr 115px 130px 120px 90px;
+  gap: 8px;
+  padding: 12px 14px;
+  align-items: center;
+}
+.av-wrap {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.av {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 11px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.av-name {
+  font-size: 12px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.due-pill {
+  font-size: 11px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+.due-pill.overdue {
+  color: var(--danger);
+  font-weight: 600;
+}
+.status-badge {
+  background: var(--info-bg);
+  color: var(--info);
+}
+
 /* ── Forms ─────────────────────────────────────────────── */
 .form-grid {
   display: grid;
