@@ -54,9 +54,31 @@ def init_db():
     """Initialize database tables and create default admin if needed"""
     try:
         db.create_all()
-        # Check and create default admin
-        from sqlalchemy import inspect
+        
+        # Migrate vendor columns if needed
+        from sqlalchemy import inspect, text
         inspector = inspect(db.engine)
+        
+        # Add vendor_id column if missing
+        if 'job' in inspector.get_table_names():
+            columns = [col['name'] for col in inspector.get_columns('job')]
+            if 'vendor_id' not in columns:
+                print("Adding vendor_id to job table...")
+                db.session.execute(text('ALTER TABLE job ADD COLUMN vendor_id INTEGER'))
+                db.session.commit()
+                print("✓ vendor_id added")
+            if 'vendor_amount' not in columns:
+                print("Adding vendor_amount to job table...")
+                db.session.execute(text('ALTER TABLE job ADD COLUMN vendor_amount FLOAT DEFAULT 0'))
+                db.session.commit()
+                print("✓ vendor_amount added")
+            if 'vendor_paid' not in columns:
+                print("Adding vendor_paid to job table...")
+                db.session.execute(text('ALTER TABLE job ADD COLUMN vendor_paid FLOAT DEFAULT 0'))
+                db.session.commit()
+                print("✓ vendor_paid added")
+        
+        # Check and create default admin
         if 'user' in inspector.get_table_names():
             admin_exists = db.session.execute(
                 db.text("SELECT COUNT(*) FROM \"user\" WHERE email='admin@tahfeel.ae'")
