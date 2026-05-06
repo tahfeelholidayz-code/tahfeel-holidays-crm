@@ -73,9 +73,6 @@
             <label>Status</label>
             <select name="status">
               <option value="">All Statuses</option>
-              <option value="Pending Finance Approval" {% if status_filter=="Pending Finance Approval" %}selected{% endif %}>Pending Finance Approval</option>
-              <option value="Pending Finance Close" {% if status_filter=="Pending Finance Close" %}selected{% endif %}>Pending Finance Close</option>
-              <option value="Closed" {% if status_filter=="Closed" %}selected{% endif %}>Closed</option>
               {% for s in statuses %}
               <option value="{{ s }}" {% if status_filter==s %}selected{% endif %}>{{ s }}</option>
               {% endfor %}

@@ -2125,9 +2125,9 @@ def import_customers():
 
 # ── Jobs ──────────────────────────────────────────────────────────────────────
 
-JOB_STATUSES = ['Assigned', 'Job Started', 'Processing', 'Pending Authority', 'On Hold', 'Delayed', 'Final Stage', 'Done']
-JOB_STATUSES_FINANCE = ['Closed']  # Finance-only status
-JOB_STATUSES_ALL = ['Pending Finance Approval'] + JOB_STATUSES + ['Pending Finance Close', 'Closed']
+JOB_STATUSES = ['Assigned', 'Processing', 'Pending Authority', 'On Hold', 'Done', 'Delayed']
+JOB_STATUSES_FINANCE = []  # Removed finance-specific statuses
+JOB_STATUSES_ALL = JOB_STATUSES
 
 @app.route('/jobs')
 @login_required

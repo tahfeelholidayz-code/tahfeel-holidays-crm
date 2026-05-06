@@ -62,7 +62,7 @@
             <div style="font-size:10px;font-weight:600;color:var(--text-muted);text-transform:uppercase;margin-bottom:3px;">Due Date</div>
             <div style="font-size:14px;color:var(--text-primary);">
               {{ job.due_date.strftime('%d %b %Y') if job.due_date else '—' }}
-              {% if job.due_date and job.due_date < now and job.status not in ['Done','Closed','Pending Finance Approval'] %}
+              {% if job.due_date and job.due_date < now and job.status not in ['Done'] %}
               <span style="color:var(--danger);font-size:11px;font-weight:700;"> ⚠ Overdue</span>
               {% endif %}
             </div>
@@ -101,7 +101,7 @@
         </div>
 
         <!-- Completion Summary -->
-        {% if job.status in ['Done','Pending Finance Close','Closed'] and job.final_remarks %}
+        {% if job.status in ['Done','Done'] and job.final_remarks %}
         <div style="background:var(--success-bg);border:1px solid #b8ddb0;border-radius:var(--radius-md);padding:14px 16px;margin-top:12px;">
           <div style="font-size:10px;font-weight:700;color:var(--success);text-transform:uppercase;letter-spacing:.4px;margin-bottom:10px;">Completion Summary</div>
           {% if job.final_remarks %}<div style="font-size:13px;margin-bottom:4px;"><strong style="color:var(--text-muted);font-size:10px;text-transform:uppercase;">Final: </strong>{{ job.final_remarks }}</div>{% endif %}
@@ -158,14 +158,14 @@
     {% endif %}
 
     <!-- Awaiting finance banner -->
-    {% if job.status == 'Pending Finance Approval' and session.role not in ['finance','admin'] %}
+    {% if job.status == 'Done' and session.role not in ['finance','admin'] %}
     <div style="background:var(--warning-bg);border:1px solid #F0C070;border-radius:var(--radius-md);padding:12px 18px;margin-bottom:12px;font-size:13px;color:var(--warning);font-weight:600;">
       ⏳ Awaiting finance approval. You can view but not update this task yet.
     </div>
     {% endif %}
 
     <!-- Finance: Approval form -->
-    {% if session.role in ['finance','admin'] and job.status == 'Pending Finance Approval' %}
+    {% if session.role in ['finance','admin'] and job.status == 'Done' %}
     <div class="card" style="margin-bottom:12px;">
       <div class="card-header"><h2 style="color:var(--success);">✓ Finance Approval</h2></div>
       <div class="card-body">
@@ -308,7 +308,7 @@
     {% endif %}
 
     <!-- Finance: Update payment -->
-    {% if session.role in ['finance','admin'] and job.status not in ['Pending Finance Approval','Pending Finance Close','Closed'] %}
+    {% if session.role in ['finance','admin'] and job.status not in ['Done','Done'] %}
     <div class="card" style="margin-bottom:12px;">
       <div class="card-header"><h2>Update Payment</h2></div>
       <div class="card-body">
@@ -399,7 +399,7 @@
     {% endif %}
 
     <!-- Status Update form -->
-    {% if session.role in ['admin','sales','operations'] and job.status not in ['Pending Finance Approval','Closed'] %}
+    {% if session.role in ['admin','sales','operations'] and job.status not in ['Done'] %}
     <div class="card" style="margin-bottom:12px;">
       <div class="card-header"><h2>Add Update</h2></div>
       <div class="card-body">
@@ -537,7 +537,7 @@
             {% set is_done = sj.status in ['Done','Closed','Completed'] %}
             {% set is_current = sj.id == job.id %}
             {% set is_hold = sj.status in ['On Hold','Delayed','Rejected'] %}
-            {% set is_active = not is_done and not is_hold and sj.status not in ['Pending Finance Approval'] %}
+            {% set is_active = not is_done and not is_hold and sj.status not in ['Done'] %}
 
             <div style="display:flex;align-items:center;justify-content:space-between;padding:9px 11px;border-radius:8px;
               {% if is_done %}background:#E1F5EE;
