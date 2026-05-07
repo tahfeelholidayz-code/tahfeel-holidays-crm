@@ -279,46 +279,43 @@ function switchTab(tab, btn) {
 
 // ── Init ────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', function() {
-  var today = new Date().toISOString().split('T')[0];
-  document.getElementById('invDate').value = today;
-  document.getElementById('invsDate').value = today;
-  
-  // Generate invoice numbers after a short delay to ensure DOM is ready
+  // Use setTimeout to ensure all DOM elements are ready
   setTimeout(function() {
+    var today = new Date().toISOString().split('T')[0];
+    
+    // Set dates
+    var invDateField = document.getElementById('invDate');
+    var invsDateField = document.getElementById('invsDate');
+    if (invDateField) invDateField.value = today;
+    if (invsDateField) invsDateField.value = today;
+    
+    // Generate invoice numbers
     genNos();
-  }, 100);
-  
-  addRow('inv'); addRow('inv'); addRow('inv');
-  addRow('invs'); addRow('invs'); addRow('invs');
-  
-  // Default remarks for Package Invoice
-  addItem('invRemList','Remark...','All bookings are subject to availability at the time of confirmation.');
-  addItem('invRemList','Remark...','Cancellation and amendment policies vary by service provider and will be communicated upon booking.');
-  addItem('invRemList','Remark...','Government fees, visa charges, and third-party costs are non-refundable once processing begins.');
-  addItem('invRemList','Remark...','Flight tickets and hotel reservations require full payment before issuance.');
-  addItem('invRemList','Remark...','Client must provide complete and valid travel documents (passport, visa, etc.) as required.');
-  addItem('invRemList','Remark...','Travel insurance is recommended and can be arranged upon request.');
-  addItem('invRemList','Remark...','Prices are subject to change due to currency fluctuations, fuel surcharges, or government tax updates.');
-  
-  // Default remarks for Services Invoice  
-  addItem('invsRemList','Remark...','All bookings are subject to availability at the time of confirmation.');
-  addItem('invsRemList','Remark...','Cancellation fees apply as per service provider terms and conditions.');
-  addItem('invsRemList','Remark...','Government fees and third-party charges are non-refundable once processing starts.');
-  addItem('invsRemList','Remark...','Client is responsible for providing accurate information and valid travel documents.');
-  addItem('invsRemList','Remark...','Service timelines are subject to approval from relevant authorities and service providers.');
-  addItem('qtTcList','Enter term...','Co Tax Registration is provided as complimentary service.');
-  addItem('qtTcList','Enter term...','All prices quoted are in AED (United Arab Emirates Dirham).');
-  addItem('qtTcList','Enter term...','All fees are included; there are no additional charges except for the marketing fee.');
-  addItem('qtTcList','Enter term...','Refunds are subject to deductions for any expenses already incurred.');
-  addItem('qtTcList','Enter term...','Payments made for government fees and third-party charges are non-refundable once processing has started.');
-  addItem('qtTcList','Enter term...','Processing timelines are subject to approval from relevant UAE authorities.');
-  addItem('qtTcList','Enter term...','Client is responsible for providing accurate and complete documents/access on time.');
-  addItem('qtDocList','Document name...','Passport copy');
-  addItem('qtDocList','Document name...','Passport size photo');
-  addItem('qtDocList','Document name...','Emirates ID copy (for renewal)');
-  addItem('qtNoteList','Note...','Payment terms: 50% advance, remaining while processing.');
-  addItem('qtNoteList','Note...','Service delivery timeline will be confirmed upon receipt of all required documents.');
-  
+    
+    // Add default rows
+    addRow('inv'); addRow('inv'); addRow('inv');
+    addRow('invs'); addRow('invs'); addRow('invs');
+    
+    // Default remarks for Package Invoice
+    addItem('invRemList','Remark...','All bookings are subject to availability at the time of confirmation.');
+    addItem('invRemList','Remark...','Cancellation and amendment policies vary by service provider and will be communicated upon booking.');
+    addItem('invRemList','Remark...','Government fees, visa charges, and third-party costs are non-refundable once processing begins.');
+    addItem('invRemList','Remark...','Flight tickets and hotel reservations require full payment before issuance.');
+    addItem('invRemList','Remark...','Client must provide complete and valid travel documents (passport, visa, etc.) as required.');
+    addItem('invRemList','Remark...','Travel insurance is recommended and can be arranged upon request.');
+    addItem('invRemList','Remark...','Prices are subject to change due to currency fluctuations, fuel surcharges, or government tax updates.');
+    
+    // Default remarks for Services Invoice  
+    addItem('invsRemList','Remark...','All bookings are subject to availability at the time of confirmation.');
+    addItem('invsRemList','Remark...','Cancellation fees apply as per service provider terms and conditions.');
+    addItem('invsRemList','Remark...','Government fees and third-party charges are non-refundable once processing starts.');
+    addItem('invsRemList','Remark...','Client is responsible for providing accurate information and valid travel documents.');
+    addItem('invsRemList','Remark...','Service timelines are subject to approval from relevant authorities and service providers.');
+  }, 150);
+});
+
+// ── VAT Toggle Event Listeners ──────────────────────────────
+document.addEventListener('DOMContentLoaded', function() {
   // Add event listeners to VAT toggle buttons
   document.querySelectorAll('input[name="invVatToggle"]').forEach(function(radio) {
     radio.addEventListener('change', function() { calcAll('inv'); });
@@ -680,27 +677,41 @@ function previewInvs() {
   showPreview(html);
 }
 
-  if(!confirm('Clear quotation?')) return;
-  ['qtCustName','qtCustCo','qtCustPhone','qtCustEmail','qtCustAddr','qtNote','qtStaffName','qtStaffMobile'].forEach(function(id){document.getElementById(id).value='';});
-  document.getElementById('qtItemsBody').innerHTML='';
-  ['qtTcList','qtDocList','qtNoteList'].forEach(function(id){document.getElementById(id).innerHTML='';});
-  qtRowN=0;
-  document.getElementById('qtValid').value='';
+// ── RESET FUNCTIONS ───────────────────────────────────────────
+function resetInv() {
+  if(!confirm('Clear all invoice data?')) return;
+  ['invCustName','invCustCo','invCustPhone','invCustEmail','invCustAddr','invNote','invStaffName','invStaffMobile'].forEach(function(id){
+    var el = document.getElementById(id);
+    if(el) el.value='';
+  });
+  document.getElementById('invItemsBody').innerHTML='';
+  document.getElementById('invRemList').innerHTML='';
+  addRow('inv'); addRow('inv'); addRow('inv');
+  addItem('invRemList','Remark...','All bookings are subject to availability at the time of confirmation.');
+  addItem('invRemList','Remark...','Cancellation and amendment policies vary by service provider and will be communicated upon booking.');
+  addItem('invRemList','Remark...','Government fees, visa charges, and third-party costs are non-refundable once processing begins.');
   genNos();
-  addItem('qtTcList','Enter term...','Co Tax Registration is provided as complimentary service.');
-  addItem('qtTcList','Enter term...','All prices quoted are in AED (United Arab Emirates Dirham).');
-  addItem('qtTcList','Enter term...','All fees are included; there are no additional charges except for the marketing fee.');
-  addItem('qtTcList','Enter term...','Refunds are subject to deductions for any expenses already incurred.');
-  addItem('qtTcList','Enter term...','Payments made for government fees and third-party charges are non-refundable once processing has started.');
-  addItem('qtTcList','Enter term...','Processing timelines are subject to approval from relevant UAE authorities.');
-  addItem('qtTcList','Enter term...','Client is responsible for providing accurate and complete documents/access on time.');
-  addItem('qtDocList','Document name...','Passport copy');
-  addItem('qtDocList','Document name...','Passport size photo');
-  addItem('qtDocList','Document name...','Emirates ID copy (for renewal)');
-  addItem('qtNoteList','Note...','Payment terms: 50% advance, remaining while processing.');
-  addItem('qtNoteList','Note...','Service delivery timeline will be confirmed upon receipt of all required documents.');
-  calcAll('qt');
+  var today = new Date().toISOString().split('T')[0];
+  document.getElementById('invDate').value = today;
 }
+
+function resetInvs() {
+  if(!confirm('Clear all service invoice data?')) return;
+  ['invsCustName','invsCustCo','invsCustPhone','invsCustEmail','invsCustAddr','invsNote','invsStaffName','invsStaffMobile'].forEach(function(id){
+    var el = document.getElementById(id);
+    if(el) el.value='';
+  });
+  document.getElementById('invsItemsBody').innerHTML='';
+  document.getElementById('invsRemList').innerHTML='';
+  addRow('invs'); addRow('invs'); addRow('invs');
+  addItem('invsRemList','Remark...','All bookings are subject to availability at the time of confirmation.');
+  addItem('invsRemList','Remark...','Cancellation fees apply as per service provider terms and conditions.');
+  genNos();
+  var today = new Date().toISOString().split('T')[0];
+  document.getElementById('invsDate').value = today;
+}
+
+  ['qtTcList','qtDocList','qtNoteList'].forEach(function(id){document.getElementById(id).innerHTML='';});
 </script>
 </body>
 </html>
