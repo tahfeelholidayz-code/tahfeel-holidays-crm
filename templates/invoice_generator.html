@@ -282,16 +282,30 @@ document.addEventListener('DOMContentLoaded', function() {
   var today = new Date().toISOString().split('T')[0];
   document.getElementById('invDate').value = today;
   document.getElementById('invsDate').value = today;
-  genNos();
+  
+  // Generate invoice numbers after a short delay to ensure DOM is ready
+  setTimeout(function() {
+    genNos();
+  }, 100);
+  
   addRow('inv'); addRow('inv'); addRow('inv');
   addRow('invs'); addRow('invs'); addRow('invs');
-  addItem('invRemList','Remark...','Government receipt will be provided for all government charges; no tax is applicable on govt fees.');
-  addItem('invRemList','Remark...','Payments made for government fees and third-party charges are non-refundable once processing has started.');
-  addItem('invRemList','Remark...','Processing timelines are subject to approval from relevant UAE authorities.');
-  addItem('invRemList','Remark...','Client is responsible for providing accurate and complete documents/access on time.');
-  addItem('invsRemList','Remark...','Payments made for services are non-refundable once processing has started.');
-  addItem('invsRemList','Remark...','Processing timelines are subject to approval from relevant UAE authorities.');
-  addItem('invsRemList','Remark...','Client is responsible for providing accurate and complete documents/access on time.');
+  
+  // Default remarks for Package Invoice
+  addItem('invRemList','Remark...','All bookings are subject to availability at the time of confirmation.');
+  addItem('invRemList','Remark...','Cancellation and amendment policies vary by service provider and will be communicated upon booking.');
+  addItem('invRemList','Remark...','Government fees, visa charges, and third-party costs are non-refundable once processing begins.');
+  addItem('invRemList','Remark...','Flight tickets and hotel reservations require full payment before issuance.');
+  addItem('invRemList','Remark...','Client must provide complete and valid travel documents (passport, visa, etc.) as required.');
+  addItem('invRemList','Remark...','Travel insurance is recommended and can be arranged upon request.');
+  addItem('invRemList','Remark...','Prices are subject to change due to currency fluctuations, fuel surcharges, or government tax updates.');
+  
+  // Default remarks for Services Invoice  
+  addItem('invsRemList','Remark...','All bookings are subject to availability at the time of confirmation.');
+  addItem('invsRemList','Remark...','Cancellation fees apply as per service provider terms and conditions.');
+  addItem('invsRemList','Remark...','Government fees and third-party charges are non-refundable once processing starts.');
+  addItem('invsRemList','Remark...','Client is responsible for providing accurate information and valid travel documents.');
+  addItem('invsRemList','Remark...','Service timelines are subject to approval from relevant authorities and service providers.');
   addItem('qtTcList','Enter term...','Co Tax Registration is provided as complimentary service.');
   addItem('qtTcList','Enter term...','All prices quoted are in AED (United Arab Emirates Dirham).');
   addItem('qtTcList','Enter term...','All fees are included; there are no additional charges except for the marketing fee.');
@@ -315,9 +329,16 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 function genNos() {
-  var n = Math.floor(10000 + Math.random()*90000);
-  document.getElementById('invNo').value = 'INV-'+n;
-  document.getElementById('invsNo').value = 'INV-'+(n+2);
+  try {
+    var n = Math.floor(10000 + Math.random()*90000);
+    var invNoField = document.getElementById('invNo');
+    var invsNoField = document.getElementById('invsNo');
+    
+    if (invNoField) invNoField.value = 'INV-'+n;
+    if (invsNoField) invsNoField.value = 'INV-'+(n+2);
+  } catch(e) {
+    console.error('Error generating invoice numbers:', e);
+  }
 }
 
 // ── Add/remove addable items ─────────────────────────────────
