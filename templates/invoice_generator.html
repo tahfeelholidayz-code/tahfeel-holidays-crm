@@ -208,10 +208,13 @@
       </div>
       <div class="inv-card purple">
         <h3>Customer Details</h3>
-        <div class="inv-row"><div class="inv-ff"><label>Customer Name</label><input type="text" id="invsCustName" placeholder="Full name or company name"></div></div>
         <div class="inv-row c2">
+          <div class="inv-ff"><label>Customer Name <span class="req">*</span></label><input type="text" id="invsCustName" placeholder="Full name"></div>
+          <div class="inv-ff"><label>Company <span class="opt">(optional)</span></label><input type="text" id="invsCustCo" placeholder="Company name"></div>
+        </div>
+        <div class="inv-row c2">
+          <div class="inv-ff"><label>Phone <span class="req">*</span></label><input type="text" id="invsCustPhone" placeholder="+971 XX XXX XXXX"></div>
           <div class="inv-ff"><label>Email <span class="opt">(optional)</span></label><input type="email" id="invsCustEmail" placeholder="customer@email.com"></div>
-          <div class="inv-ff"><label>Phone <span class="opt">(optional)</span></label><input type="text" id="invsCustPhone" placeholder="+971 XX XXX XXXX"></div>
         </div>
         <div class="inv-row"><div class="inv-ff"><label>Address <span class="opt">(optional)</span></label><input type="text" id="invsCustAddr" placeholder="Customer address"></div></div>
       </div>
@@ -663,8 +666,10 @@ function previewInvs() {
   if(!cp){alert('Please enter Phone Number');return;}
   var d=getRows('invs');
   var billTo='<strong>'+cn+'</strong>';
+  var co=document.getElementById('invsCustCo').value;
   var em=document.getElementById('invsCustEmail').value;
   var ad=document.getElementById('invsCustAddr').value;
+  if(co) billTo+='<br>'+co;
   if(cp) billTo+='<br>'+cp;
   if(em) billTo+='<br>'+em;
   if(ad) billTo+='<br>'+ad;
@@ -711,7 +716,40 @@ function resetInvs() {
   document.getElementById('invsDate').value = today;
 }
 
-  ['qtTcList','qtDocList','qtNoteList'].forEach(function(id){document.getElementById(id).innerHTML='';});
+// ── PREVIEW & PRINT FUNCTIONS ─────────────────────────────────
+function showPreview(html) {
+  var overlay = document.getElementById('pvOverlay');
+  var content = document.getElementById('pvPaper');
+  content.innerHTML = html;
+  overlay.style.display = 'flex';
+}
+
+function closePv() {
+  document.getElementById('pvOverlay').style.display = 'none';
+}
+
+function closePreview() {
+  closePv();
+}
+
+function printDoc() {
+  var content = document.getElementById('pvPaper').innerHTML;
+  if (!content || content.trim() === '') {
+    alert('Please preview the document first before printing');
+    return;
+  }
+  var printWindow = window.open('', '_blank');
+  printWindow.document.write('<html><head><title>Print Invoice</title>');
+  printWindow.document.write('<style>body{margin:0;padding:0;font-family:Arial,sans-serif;}</style>');
+  printWindow.document.write('</head><body>');
+  printWindow.document.write(content);
+  printWindow.document.write('</body></html>');
+  printWindow.document.close();
+  setTimeout(function() {
+    printWindow.print();
+  }, 250);
+}
+
 </script>
 </body>
 </html>
