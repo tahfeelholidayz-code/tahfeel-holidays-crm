@@ -502,9 +502,10 @@ function docHeader(type, no, date, note, billTo, validUntil) {
     '<div class="dd-row"><span class="k">Date:</span><span class="v">'+fmtDate(date)+'</span></div>';
   if(validUntil) metaRight+='<div class="dd-row"><span class="k">Valid Until:</span><span class="v">'+fmtDate(validUntil)+'</span></div>';
   return '<div class="pv-hdr">'+
-    '<div><img src="/static/img/logo_transparent.png" alt="Tahfeel Holidays" style="height:65px;object-fit:contain;" onerror="this.style.display=\'none\'"></div>'+
+    '<div><img src="/static/img/logo_transparent.png" alt="Tahfeel Holidays" style="height:65px;object-fit:contain;" onerror="this.style.display=\'none\'">'+
+    '<div style="font-size:16px;font-weight:700;color:#0EA5E9;margin-top:4px;letter-spacing:0.3px;">Tahfeel Holidays LLC</div></div>'+
     '<div class="pv-hdr-right"><div class="pv-dtype">'+type+'</div>'+
-    '<div class="pv-co-info">TRN: 104627774300003<br>Wasl Ivory, Shop No.7, Al Karama, Dubai - UAE<br>+971 50 394 5656 | Info@tahfeel.ae</div></div></div>'+
+    '<div class="pv-co-info">TRN: 104627774300003<br>Wasl Ivory, Shop No.7, Al Karama, Dubai - UAE<br>+971 52 104 9777 | Info@tahfeel.ae</div></div></div>'+
     '<div class="pv-div"></div>'+
     '<div class="pv-meta">'+
     '<div class="pv-bto"><h4>Bill To</h4><p>'+billTo+'</p></div>'+
@@ -654,7 +655,7 @@ function previewInv() {
     itemsTable(d.items)+
     totalsHtml(d,getItems('invRemList'))+
     bankSigHtml()+
-    '<div class="pv-ft" style="position:absolute;bottom:0;left:0;right:0;"><span>www.tahfeel.ae</span><span>Thank you for your business!</span><span>Info@tahfeel.ae | +971 50 394 5656</span></div></div>';
+    '<div class="pv-ft" style="position:absolute;bottom:0;left:0;right:0;"><span>www.tahfeel.ae</span><span>Thank you for your business!</span><span>Info@tahfeel.ae | +971 52 104 9777</span></div></div>';
   showPreview(html);
 }
 
@@ -678,7 +679,7 @@ function previewInvs() {
     itemsTable(d.items, false)+
     totalsHtml(d,getItems('invsRemList'))+
     bankSigHtml()+
-    '<div class="pv-ft" style="position:absolute;bottom:0;left:0;right:0;"><span>www.tahfeel.ae</span><span>Thank you for your business!</span><span>Info@tahfeel.ae | +971 50 394 5656</span></div></div>';
+    '<div class="pv-ft" style="position:absolute;bottom:0;left:0;right:0;"><span>www.tahfeel.ae</span><span>Thank you for your business!</span><span>Info@tahfeel.ae | +971 52 104 9777</span></div></div>';
   showPreview(html);
 }
 
