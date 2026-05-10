@@ -132,6 +132,8 @@
     {% endif %}
 
 
+    <!-- Close Task Form (Finance/Admin only when Done) -->
+    {% if job.status == 'Done' and session.role in ['finance','admin'] %}
         <form method="post" action="/jobs/{{ job.id }}/close" id="closeTaskForm">
           <div style="background:#F0F9FF;border:1px solid #BAE6FD;border-radius:var(--radius-sm);padding:12px;margin-bottom:14px;">
             <div style="font-size:11px;font-weight:700;color:#0369A1;text-transform:uppercase;margin-bottom:8px;">Customer Payment</div>
