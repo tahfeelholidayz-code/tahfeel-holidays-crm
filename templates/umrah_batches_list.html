@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tahfeel CRM — Umrah Batches</title>
+  <link rel="stylesheet" href="/static/css/tahfeel.css">
+  <link rel="icon" href="/static/img/logo_white.png" type="image/png">
+</head>
+<body>
+  {%- from 'macros.html' import topbar, nav -%}
+  {{ topbar() }}
+  {{ nav('umrah') }}
+  
+  <div class="container">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}{% for cat, msg in messages %}<div class="flash {% if cat == 'error' %}error{% elif cat == 'warning' %}warning{% endif %}">{{ msg }}</div>{% endfor %}{% endif %}
+    {% endwith %}
+
+    <div class="page-head">
+      <div>
+        <div class="page-head-title">📦 Umrah Batches</div>
+        <div style="font-size:12px;color:#94A3B8;margin-top:2px;">Manage Own Trip and Third Party batches</div>
+      </div>
+      <a href="/umrah/batch/create" class="btn-primary" style="text-decoration:none;">+ Create Batch</a>
+    </div>
+
+    <!-- Stats -->
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:20px;">
+      <div class="card-stat cs-blue">
+        <div class="cs-left">
+          <div class="cs-label">Total Batches</div>
+          <div class="cs-value">{{ batches|length }}</div>
+        </div>
+        <div class="cs-icon cs-blue">📦</div>
+      </div>
+      
+      <div class="card-stat cs-green">
+        <div class="cs-left">
+          <div class="cs-label">Own Trips</div>
+          <div class="cs-value">{{ own_count }}</div>
+        </div>
+        <div class="cs-icon cs-green">✈️</div>
+      </div>
+      
+      <div class="card-stat" style="background:#F5F3FF;border-color:#C4B5FD;">
+        <div class="cs-left">
+          <div class="cs-label">Third Party</div>
+          <div class="cs-value">{{ third_party_count }}</div>
+        </div>
+        <div class="cs-icon" style="background:#8B5CF6;color:white;">🤝</div>
+      </div>
+      
+      <div class="card-stat" style="background:#FEF3C7;border-color:#FCD34D;">
+        <div class="cs-left">
+          <div class="cs-label">Total People</div>
+          <div class="cs-value">{{ total_people }}</div>
+        </div>
+        <div class="cs-icon" style="background:#F59E0B;color:white;">👥</div>
+      </div>
+    </div>
+
+    <!-- Batches List -->
+    {% if batches %}
+    {% for batch in batches %}
+    <div class="card" style="margin-bottom:12px;border-left:4px solid {% if batch.batch_type == 'Own Trip' %}#10B981{% else %}#8B5CF6{% endif %};">
+      <div class="card-body" style="padding:16px;">
+        <div style="display:flex;justify-content:space-between;align-items:start;">
+          <div style="flex:1;">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+              <h3 style="margin:0;color:var(--text-primary);font-size:16px;">{{ batch.batch_number }}</h3>
+              <span style="background:{% if batch.batch_type == 'Own Trip' %}#ECFDF5{% else %}#F5F3FF{% endif %};color:{% if batch.batch_type == 'Own Trip' %}#065F46{% else %}#6B21A8{% endif %};padding:4px 10px;border-radius:12px;font-size:11px;font-weight:600;">{{ batch.batch_type }}</span>
+              <span style="background:{% if batch.status == 'Planning' %}#FEF3C7{% elif batch.status == 'Confirmed' %}#ECFDF5{% elif batch.status == 'In Progress' %}#DBEAFE{% else %}#F1F5F9{% endif %};color:{% if batch.status == 'Planning' %}#92400E{% elif batch.status == 'Confirmed' %}#065F46{% elif batch.status == 'In Progress' %}#1E40AF{% else %}#475569{% endif %};padding:4px 10px;border-radius:12px;font-size:11px;font-weight:600;">{{ batch.status }}</span>
+            </div>
+            {% if batch.batch_name %}
+            <div style="font-size:14px;color:#64748B;margin-bottom:8px;">{{ batch.batch_name }}</div>
+            {% endif %}
+            
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-top:10px;">
+              {% if batch.departure_date %}
+              <div style="font-size:12px;">
+                <span style="color:#94A3B8;">📅 Departure:</span>
+                <strong style="color:#0F172A;">{{ batch.departure_date.strftime('%d %b %Y') }}</strong>
+              </div>
+              {% endif %}
+              <div style="font-size:12px;">
+                <span style="color:#94A3B8;">👥 Customers:</span>
+                <strong style="color:#0F172A;">{{ batch.bookings|length }} bookings ({{ batch.bookings|sum(attribute='total_people') }} people)</strong>
+              </div>
+              {% if batch.batch_type == 'Third Party' and batch.third_party_agency %}
+              <div style="font-size:12px;">
+                <span style="color:#94A3B8;">🏢 Agency:</span>
+                <strong style="color:#0F172A;">{{ batch.third_party_agency }}</strong>
+              </div>
+              {% endif %}
+            </div>
+          </div>
+
+          <div style="display:flex;gap:8px;margin-left:16px;">
+            <a href="/umrah/batch/{{ batch.id }}" class="btn-primary" style="padding:8px 16px;font-size:13px;text-decoration:none;">View Details</a>
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+    {% else %}
+    <div class="card">
+      <div class="card-body" style="text-align:center;padding:60px 20px;color:#94A3B8;">
+        <div style="font-size:48px;margin-bottom:16px;">📦</div>
+        <div style="font-size:16px;font-weight:600;color:#64748B;margin-bottom:8px;">No Batches Yet</div>
+        <div style="font-size:13px;margin-bottom:20px;">Create your first Umrah batch</div>
+        <a href="/umrah/batch/create" class="btn-primary" style="text-decoration:none;">+ Create First Batch</a>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</body>
+</html>

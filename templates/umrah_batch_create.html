@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tahfeel CRM — Create Batch</title>
+  <link rel="stylesheet" href="/static/css/tahfeel.css">
+  <link rel="icon" href="/static/img/logo_white.png" type="image/png">
+</head>
+<body>
+  {%- from 'macros.html' import topbar, nav -%}
+  {{ topbar() }}
+  {{ nav('umrah') }}
+  
+  <div class="container">
+    <div style="margin-bottom:20px;">
+      <a href="/umrah/batches-list" style="color:#0EA5E9;text-decoration:none;font-size:13px;">← Back to Batches</a>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <h2>📦 Create Umrah Batch</h2>
+      </div>
+      <div class="card-body">
+        <form method="post" action="/umrah/batch/create">
+          
+          <!-- Batch Type Selection -->
+          <div style="background:#F0F9FF;border:1px solid #BAE6FD;border-radius:8px;padding:14px;margin-bottom:20px;">
+            <div style="font-size:11px;font-weight:700;color:#0369A1;text-transform:uppercase;margin-bottom:10px;">Batch Type <span style="color:#EF4444;">*</span></div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+              <label style="background:white;border:2px solid #E5E7EB;border-radius:8px;padding:16px;cursor:pointer;transition:all 0.2s;" onclick="selectType('Own Trip')">
+                <input type="radio" name="batch_type" value="Own Trip" required style="margin-right:8px;">
+                <div style="display:inline-block;">
+                  <div style="font-weight:700;color:#10B981;font-size:14px;">✈️ Own Trip</div>
+                  <div style="font-size:11px;color:#64748B;margin-top:4px;">Tahfeel organizes everything</div>
+                </div>
+              </label>
+              <label style="background:white;border:2px solid #E5E7EB;border-radius:8px;padding:16px;cursor:pointer;transition:all 0.2s;" onclick="selectType('Third Party')">
+                <input type="radio" name="batch_type" value="Third Party" required style="margin-right:8px;">
+                <div style="display:inline-block;">
+                  <div style="font-weight:700;color:#8B5CF6;font-size:14px;">🤝 Third Party</div>
+                  <div style="font-size:11px;color:#64748B;margin-top:4px;">Send to agency</div>
+                </div>
+              </label>
+            </div>
+          </div>
+
+          <!-- Basic Details -->
+          <div style="background:#FEF3C7;border:1px solid #FCD34D;border-radius:8px;padding:14px;margin-bottom:20px;">
+            <div style="font-size:11px;font-weight:700;color:#92400E;text-transform:uppercase;margin-bottom:10px;">Basic Details</div>
+            
+            <div class="form-row-2">
+              <div class="form-group">
+                <label>Batch Number <span style="color:#EF4444;">*</span></label>
+                <input type="text" name="batch_number" required placeholder="UMR-2024-MAR-01" pattern="UMR-[0-9]{4}-[A-Z]{3}-[0-9]{2}">
+                <small style="color:#64748B;font-size:11px;">Format: UMR-YYYY-MMM-NN</small>
+              </div>
+              <div class="form-group">
+                <label>Batch Name</label>
+                <input type="text" name="batch_name" placeholder="March 2024 Umrah">
+              </div>
+            </div>
+
+            <div class="form-row-2">
+              <div class="form-group">
+                <label>Departure Date</label>
+                <input type="date" name="departure_date">
+              </div>
+              <div class="form-group">
+                <label>Return Date</label>
+                <input type="date" name="return_date">
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label>Status <span style="color:#EF4444;">*</span></label>
+              <select name="status" required>
+                <option value="Planning" selected>Planning</option>
+                <option value="Confirmed">Confirmed</option>
+                <option value="In Progress">In Progress</option>
+                <option value="Completed">Completed</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Third Party Details (shown only for Third Party) -->
+          <div id="thirdPartySection" style="display:none;background:#F5F3FF;border:1px solid #C4B5FD;border-radius:8px;padding:14px;margin-bottom:20px;">
+            <div style="font-size:11px;font-weight:700;color:#6B21A8;text-transform:uppercase;margin-bottom:10px;">Third Party Details</div>
+            <div class="form-group">
+              <label>Agency Name <span style="color:#EF4444;">*</span></label>
+              <input type="text" name="third_party_agency" id="agencyName" placeholder="e.g., Al Huda Travel">
+            </div>
+          </div>
+
+          <!-- Own Trip Details (shown only for Own Trip) -->
+          <div id="ownTripSection" style="display:none;background:#ECFDF5;border:1px solid #6EE7B7;border-radius:8px;padding:14px;margin-bottom:20px;">
+            <div style="font-size:11px;font-weight:700;color:#065F46;text-transform:uppercase;margin-bottom:10px;">Trip Details</div>
+            
+            <div class="form-row-2">
+              <div class="form-group">
+                <label>Hotel - Makkah</label>
+                <input type="text" name="hotel_makkah" placeholder="e.g., Swissotel Makkah">
+              </div>
+              <div class="form-group">
+                <label>Hotel - Madinah</label>
+                <input type="text" name="hotel_madinah" placeholder="e.g., Pullman Zamzam">
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label>Flight Details</label>
+              <textarea name="flight_details" rows="2" placeholder="e.g., Emirates EK123 - Dubai to Jeddah"></textarea>
+            </div>
+
+            <div class="form-group">
+              <label>Transport Details</label>
+              <textarea name="transport_details" rows="2" placeholder="e.g., Luxury AC Buses"></textarea>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Notes</label>
+            <textarea name="notes" rows="3" placeholder="Additional notes..."></textarea>
+          </div>
+
+          <div style="display:flex;gap:10px;margin-top:20px;">
+            <button type="submit" class="btn-primary" style="flex:1;">Create Batch</button>
+            <a href="/umrah/batches-list" style="flex:1;padding:12px;background:#F1F5F9;border:1px solid #CBD5E1;border-radius:6px;text-align:center;text-decoration:none;color:#475569;font-weight:600;">Cancel</a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function selectType(type) {
+      const ownSection = document.getElementById('ownTripSection');
+      const thirdSection = document.getElementById('thirdPartySection');
+      const agencyField = document.getElementById('agencyName');
+      
+      if (type === 'Own Trip') {
+        ownSection.style.display = 'block';
+        thirdSection.style.display = 'none';
+        agencyField.removeAttribute('required');
+      } else {
+        ownSection.style.display = 'none';
+        thirdSection.style.display = 'block';
+        agencyField.setAttribute('required', 'required');
+      }
+    }
+
+    // Handle radio button changes
+    document.querySelectorAll('input[name="batch_type"]').forEach(radio => {
+      radio.addEventListener('change', function() {
+        selectType(this.value);
+      });
+    });
+  </script>
+</body>
+</html>

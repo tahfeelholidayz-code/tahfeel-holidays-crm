@@ -4805,6 +4805,101 @@ def assign_to_batch(booking_id):
         flash(f'Error: {str(e)}', 'error')
         return redirect(url_for('umrah_customer_detail', booking_id=booking_id))
 
+# ============================================
+# BATCH MANAGEMENT ROUTES
+# ============================================
+
+@app.route('/umrah/batches-list')
+@login_required
+def umrah_batches_list():
+    """List all umrah batches"""
+    batches = UmrahBatch.query.order_by(UmrahBatch.created_at.desc()).all()
+    
+    own_count = sum(1 for b in batches if b.batch_type == 'Own Trip')
+    third_party_count = sum(1 for b in batches if b.batch_type == 'Third Party')
+    total_people = sum(b.bookings|sum(attribute='total_people') for b in batches if b.bookings)
+    
+    return render_template('umrah_batches_list.html',
+                         batches=batches,
+                         own_count=own_count,
+                         third_party_count=third_party_count,
+                         total_people=total_people)
+
+@app.route('/umrah/batch/create', methods=['GET', 'POST'])
+@login_required
+def create_umrah_batch():
+    """Create new umrah batch"""
+    if request.method == 'GET':
+        return render_template('umrah_batch_create.html')
+    
+    try:
+        batch_type = request.form.get('batch_type')
+        departure_date = request.form.get('departure_date')
+        return_date = request.form.get('return_date')
+        
+        batch = UmrahBatch(
+            batch_number=request.form.get('batch_number'),
+            batch_name=request.form.get('batch_name'),
+            batch_type=batch_type,
+            third_party_agency=request.form.get('third_party_agency') if batch_type == 'Third Party' else None,
+            departure_date=datetime.strptime(departure_date, '%Y-%m-%d').date() if departure_date else None,
+            return_date=datetime.strptime(return_date, '%Y-%m-%d').date() if return_date else None,
+            hotel_makkah=request.form.get('hotel_makkah'),
+            hotel_madinah=request.form.get('hotel_madinah'),
+            flight_details=request.form.get('flight_details'),
+            transport_details=request.form.get('transport_details'),
+            status=request.form.get('status', 'Planning'),
+            notes=request.form.get('notes'),
+            created_by=session['user_id']
+        )
+        
+        db.session.add(batch)
+        db.session.commit()
+        
+        flash(f'Batch {batch.batch_number} created successfully!')
+        return redirect(url_for('umrah_batch_detail', batch_id=batch.id))
+        
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error: {str(e)}', 'error')
+        return render_template('umrah_batch_create.html')
+
+@app.route('/umrah/batch/<int:batch_id>')
+@login_required
+def umrah_batch_detail(batch_id):
+    """View batch details"""
+    batch = UmrahBatch.query.get_or_404(batch_id)
+    return render_template('umrah_batch_detail.html', batch=batch)
+
+@app.route('/umrah/batch/<int:batch_id>/add-expense', methods=['POST'])
+@login_required
+def add_batch_expense(batch_id):
+    """Add expense to Own Trip batch"""
+    batch = UmrahBatch.query.get_or_404(batch_id)
+    
+    if batch.batch_type != 'Own Trip':
+        flash('Can only add expenses to Own Trip batches', 'error')
+        return redirect(url_for('umrah_batch_detail', batch_id=batch_id))
+    
+    try:
+        expense = UmrahBatchExpense(
+            batch_id=batch_id,
+            expense_type=request.form.get('expense_type'),
+            amount=float(request.form.get('amount', 0)),
+            notes=request.form.get('notes')
+        )
+        
+        db.session.add(expense)
+        db.session.commit()
+        
+        flash(f'Expense added successfully!')
+        return redirect(url_for('umrah_batch_detail', batch_id=batch_id))
+        
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error: {str(e)}', 'error')
+        return redirect(url_for('umrah_batch_detail', batch_id=batch_id))
+
 @app.route('/umrah/customer/<int:booking_id>/delete')
 @login_required
 def delete_umrah_customer(booking_id):

@@ -17,377 +17,235 @@
       {% if messages %}{% for cat, msg in messages %}<div class="flash {% if cat == 'error' %}error{% elif cat == 'warning' %}warning{% endif %}">{{ msg }}</div>{% endfor %}{% endif %}
     {% endwith %}
 
-    <!-- Header -->
     <div style="margin-bottom:20px;">
-      <a href="/umrah/batches" style="color:#0EA5E9;text-decoration:none;font-size:13px;">← Back to Batches</a>
-      <div style="display:flex;justify-content:space-between;align-items:start;margin-top:10px;">
-        <div>
-          <h1 style="margin:0;font-size:24px;color:var(--text-primary);">{{ batch.batch_number }}</h1>
-          {% if batch.batch_name %}
-          <div style="font-size:14px;color:#64748B;margin-top:4px;">{{ batch.batch_name }}</div>
-          {% endif %}
-        </div>
-        <span style="background:{% if batch.status == 'Planning' %}#FEF3C7{% elif batch.status == 'Confirmed' %}#ECFDF5{% elif batch.status == 'In Progress' %}#F5F3FF{% elif batch.status == 'Completed' %}#F1F5F9{% else %}#FEE2E2{% endif %};color:{% if batch.status == 'Planning' %}#92400E{% elif batch.status == 'Confirmed' %}#065F46{% elif batch.status == 'In Progress' %}#6B21A8{% elif batch.status == 'Completed' %}#475569{% else %}#991B1B{% endif %};padding:8px 16px;border-radius:16px;font-size:13px;font-weight:600;">{{ batch.status }}</span>
+      <a href="/umrah/batches-list" style="color:#0EA5E9;text-decoration:none;font-size:13px;">← Back to Batches</a>
+    </div>
+
+    <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:20px;">
+      <div>
+        <h1 style="margin:0;font-size:24px;color:var(--text-primary);">{{ batch.batch_number }}</h1>
+        {% if batch.batch_name %}
+        <div style="font-size:14px;color:#64748B;margin-top:4px;">{{ batch.batch_name }}</div>
+        {% endif %}
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <span style="background:{% if batch.batch_type == 'Own Trip' %}#ECFDF5{% else %}#F5F3FF{% endif %};color:{% if batch.batch_type == 'Own Trip' %}#065F46{% else %}#6B21A8{% endif %};padding:8px 16px;border-radius:16px;font-size:13px;font-weight:600;">{{ batch.batch_type }}</span>
+        <span style="background:{% if batch.status == 'Planning' %}#FEF3C7{% elif batch.status == 'Confirmed' %}#ECFDF5{% else %}#DBEAFE{% endif %};color:{% if batch.status == 'Planning' %}#92400E{% elif batch.status == 'Confirmed' %}#065F46{% else %}#1E40AF{% endif %};padding:8px 16px;border-radius:16px;font-size:13px;font-weight:600;">{{ batch.status }}</span>
       </div>
     </div>
 
-    <!-- Batch Info Stats -->
+    <!-- Stats -->
+    {% set total_revenue = batch.bookings|sum(attribute='total_package_amount') %}
+    {% set total_people = batch.bookings|sum(attribute='total_people') %}
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:20px;">
       <div class="card-stat cs-blue">
         <div class="cs-left">
-          <div class="cs-label">Departure</div>
-          <div class="cs-value" style="font-size:14px;">{{ batch.departure_date.strftime('%d %b %Y') }}</div>
-        </div>
-        <div class="cs-icon cs-blue">📅</div>
-      </div>
-      
-      <div class="card-stat cs-blue">
-        <div class="cs-left">
-          <div class="cs-label">Return</div>
-          <div class="cs-value" style="font-size:14px;">{{ batch.return_date.strftime('%d %b %Y') }}</div>
-        </div>
-        <div class="cs-icon cs-blue">🔙</div>
-      </div>
-      
-      <div class="card-stat cs-green">
-        <div class="cs-left">
           <div class="cs-label">Customers</div>
-          <div class="cs-value">{{ batch.customers|length }}/{{ batch.total_capacity }}</div>
+          <div class="cs-value">{{ batch.bookings|length }}</div>
+          <div style="font-size:10px;color:#64748B;">{{ total_people }} people</div>
         </div>
-        <div class="cs-icon cs-green">👥</div>
+        <div class="cs-icon cs-blue">👥</div>
       </div>
       
       <div class="card-stat" style="background:#FEF3C7;border-color:#FCD34D;">
         <div class="cs-left">
           <div class="cs-label">Total Revenue</div>
-          <div class="cs-value" style="font-size:14px;color:#92400E;">AED {{ '{:,.0f}'.format(batch.customers|sum(attribute='package_price')) }}</div>
+          <div class="cs-value" style="font-size:15px;color:#92400E;">AED {{ '{:,.0f}'.format(total_revenue) }}</div>
         </div>
         <div class="cs-icon" style="background:#F59E0B;color:white;">💰</div>
       </div>
-      
-      <div class="card-stat" style="background:#FEE2E2;border-color:#FCA5A5;">
-        <div class="cs-left">
-          <div class="cs-label">Total Cost</div>
-          <div class="cs-value" style="font-size:14px;color:#991B1B;">AED {{ '{:,.0f}'.format(batch.customers|sum(attribute='total_cost')) }}</div>
-        </div>
-        <div class="cs-icon" style="background:#EF4444;color:white;">📊</div>
-      </div>
-      
-      <div class="card-stat" style="background:#ECFDF5;border-color:#6EE7B7;">
-        <div class="cs-left">
-          <div class="cs-label">Net Profit</div>
-          <div class="cs-value" style="font-size:14px;color:#065F46;">AED {{ '{:,.0f}'.format((batch.customers|sum(attribute='package_price')) - (batch.customers|sum(attribute='total_cost'))) }}</div>
-        </div>
-        <div class="cs-icon" style="background:#10B981;color:white;">📈</div>
-      </div>
-    </div>
 
-    <!-- Batch Details Card -->
-    <div class="card" style="margin-bottom:20px;">
-      <div class="card-header">
-        <h2>Batch Details</h2>
-        <a href="/umrah/batch/{{ batch.id }}/edit" class="btn-primary" style="padding:6px 12px;font-size:12px;text-decoration:none;">✏️ Edit Batch</a>
-      </div>
-      <div class="card-body">
-        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:16px;">
-          {% if batch.hotel_makkah %}
-          <div>
-            <div style="font-size:11px;color:#94A3B8;text-transform:uppercase;margin-bottom:4px;">Hotel - Makkah</div>
-            <div style="font-size:14px;color:var(--text-primary);">🏨 {{ batch.hotel_makkah }}</div>
+      {% if batch.batch_type == 'Own Trip' %}
+        {% set total_expenses = batch.expenses|sum(attribute='amount') %}
+        <div class="card-stat" style="background:#FEE2E2;border-color:#FCA5A5;">
+          <div class="cs-left">
+            <div class="cs-label">Total Expenses</div>
+            <div class="cs-value" style="font-size:15px;color:#991B1B;">AED {{ '{:,.0f}'.format(total_expenses) }}</div>
           </div>
-          {% endif %}
-          
-          {% if batch.hotel_madinah %}
-          <div>
-            <div style="font-size:11px;color:#94A3B8;text-transform:uppercase;margin-bottom:4px;">Hotel - Madinah</div>
-            <div style="font-size:14px;color:var(--text-primary);">🏨 {{ batch.hotel_madinah }}</div>
-          </div>
-          {% endif %}
-          
-          {% if batch.flight_details %}
-          <div>
-            <div style="font-size:11px;color:#94A3B8;text-transform:uppercase;margin-bottom:4px;">Flight Details</div>
-            <div style="font-size:14px;color:var(--text-primary);">✈️ {{ batch.flight_details }}</div>
-          </div>
-          {% endif %}
-          
-          {% if batch.transport_details %}
-          <div>
-            <div style="font-size:11px;color:#94A3B8;text-transform:uppercase;margin-bottom:4px;">Transport</div>
-            <div style="font-size:14px;color:var(--text-primary);">🚌 {{ batch.transport_details }}</div>
-          </div>
-          {% endif %}
+          <div class="cs-icon" style="background:#EF4444;color:white;">📊</div>
         </div>
         
-        {% if batch.notes %}
-        <div style="margin-top:16px;padding-top:16px;border-top:1px solid #E2E8F0;">
-          <div style="font-size:11px;color:#94A3B8;text-transform:uppercase;margin-bottom:4px;">Notes</div>
-          <div style="font-size:13px;color:#64748B;">{{ batch.notes }}</div>
+        <div class="card-stat cs-green">
+          <div class="cs-left">
+            <div class="cs-label">Net Profit</div>
+            <div class="cs-value" style="font-size:15px;">AED {{ '{:,.0f}'.format(total_revenue - total_expenses) }}</div>
+          </div>
+          <div class="cs-icon cs-green">📈</div>
         </div>
-        {% endif %}
+      {% else %}
+        {% set total_profit = batch.third_party_details|sum(attribute='revenue') %}
+        <div class="card-stat cs-green">
+          <div class="cs-left">
+            <div class="cs-label">Our Profit</div>
+            <div class="cs-value" style="font-size:15px;">AED {{ '{:,.0f}'.format(total_profit) }}</div>
+          </div>
+          <div class="cs-icon cs-green">📈</div>
+        </div>
+      {% endif %}
+    </div>
+
+    <!-- Batch Info -->
+    <div class="card" style="margin-bottom:20px;">
+      <div class="card-header">
+        <h2>📋 Batch Information</h2>
+      </div>
+      <div class="card-body">
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;">
+          {% if batch.departure_date %}
+          <div>
+            <div style="font-size:11px;color:#94A3B8;text-transform:uppercase;">Departure</div>
+            <div style="font-size:14px;color:var(--text-primary);font-weight:600;">{{ batch.departure_date.strftime('%d %b %Y') }}</div>
+          </div>
+          {% endif %}
+          {% if batch.return_date %}
+          <div>
+            <div style="font-size:11px;color:#94A3B8;text-transform:uppercase;">Return</div>
+            <div style="font-size:14px;color:var(--text-primary);font-weight:600;">{{ batch.return_date.strftime('%d %b %Y') }}</div>
+          </div>
+          {% endif %}
+          {% if batch.batch_type == 'Third Party' and batch.third_party_agency %}
+          <div>
+            <div style="font-size:11px;color:#94A3B8;text-transform:uppercase;">Agency</div>
+            <div style="font-size:14px;color:var(--text-primary);font-weight:600;">{{ batch.third_party_agency }}</div>
+          </div>
+          {% endif %}
+          {% if batch.hotel_makkah %}
+          <div>
+            <div style="font-size:11px;color:#94A3B8;text-transform:uppercase;">Hotel Makkah</div>
+            <div style="font-size:14px;color:var(--text-primary);">{{ batch.hotel_makkah }}</div>
+          </div>
+          {% endif %}
+          {% if batch.hotel_madinah %}
+          <div>
+            <div style="font-size:11px;color:#94A3B8;text-transform:uppercase;">Hotel Madinah</div>
+            <div style="font-size:14px;color:var(--text-primary);">{{ batch.hotel_madinah }}</div>
+          </div>
+          {% endif %}
+        </div>
       </div>
     </div>
 
-    <!-- Customers List -->
-    <div class="card">
+    <!-- Customers -->
+    <div class="card" style="margin-bottom:20px;">
       <div class="card-header">
-        <h2>👥 Customers ({{ batch.customers|length }})</h2>
-        <button onclick="document.getElementById('addCustomerModal').style.display='flex'" class="btn-primary">+ Add Customer</button>
+        <h2>👥 Customers ({{ batch.bookings|length }})</h2>
       </div>
       <div class="card-body" style="padding:0;">
-        {% if batch.customers %}
+        {% if batch.bookings %}
         <table>
           <thead>
             <tr>
-              <th>Name</th>
-              <th>Passport</th>
+              <th>Customer</th>
+              <th>People</th>
               <th>Package</th>
-              <th>Price</th>
-              <th>Paid</th>
               <th>Balance</th>
-              <th>Cost</th>
-              <th>Profit</th>
-              <th>Status</th>
               <th>Actions</th>
             </tr>
           </thead>
           <tbody>
-            {% for customer in batch.customers %}
+            {% for booking in batch.bookings %}
+            {% set primary = booking.passengers|selectattr('is_primary')|first %}
             <tr>
               <td>
-                <div style="font-weight:600;color:var(--text-primary);">{{ customer.passenger_name }}</div>
-                {% if customer.customer %}<div style="font-size:11px;color:#94A3B8;">{{ customer.customer.name }}</div>{% endif %}
+                <div style="font-weight:600;">{{ primary.passenger_name if primary else 'N/A' }}</div>
+                <div style="font-size:11px;color:#94A3B8;">{{ primary.phone_number if primary else '' }}</div>
               </td>
-              <td style="font-size:12px;">
-                {{ customer.passport_number or '—' }}
-                {% if customer.passport_expiry %}<div style="font-size:10px;color:#94A3B8;">Exp: {{ customer.passport_expiry.strftime('%d %b %Y') }}</div>{% endif %}
-              </td>
-              <td>{{ customer.package_type or '—' }}</td>
-              <td style="text-align:right;font-weight:600;">AED {{ '{:,.0f}'.format(customer.package_price) }}</td>
-              <td style="text-align:right;color:#10B981;">AED {{ '{:,.0f}'.format(customer.advance_paid) }}</td>
-              <td style="text-align:right;color:{% if customer.balance_pending > 0 %}#EF4444{% else %}#10B981{% endif %};font-weight:600;">
-                AED {{ '{:,.0f}'.format(customer.balance_pending) }}
-              </td>
-              <td style="text-align:right;color:#64748B;">AED {{ '{:,.0f}'.format(customer.total_cost) }}</td>
-              <td style="text-align:right;color:{% if customer.profit > 0 %}#10B981{% else %}#EF4444{% endif %};font-weight:700;">
-                AED {{ '{:,.0f}'.format(customer.profit) }}
-              </td>
-              <td>
-                <span style="background:{% if customer.status == 'Registered' %}#FEF3C7{% elif customer.status == 'Confirmed' %}#ECFDF5{% elif customer.status == 'Completed' %}#F1F5F9{% else %}#FEE2E2{% endif %};color:{% if customer.status == 'Registered' %}#92400E{% elif customer.status == 'Confirmed' %}#065F46{% elif customer.status == 'Completed' %}#475569{% else %}#991B1B{% endif %};padding:4px 8px;border-radius:10px;font-size:10px;font-weight:600;white-space:nowrap;">{{ customer.status }}</span>
-              </td>
-              <td>
-                <div style="display:flex;gap:5px;">
-                  <a href="/umrah/customer/{{ customer.id }}/edit" class="ib" title="Edit">✏️</a>
-                  <a href="/umrah/customer/{{ customer.id }}/delete" class="ib ib-del" onclick="return confirm('Remove {{ customer.passenger_name }} from batch?')" title="Delete">🗑️</a>
-                </div>
-              </td>
+              <td>{{ booking.total_people }} ({{ booking.adults_count }}A + {{ booking.children_count }}C)</td>
+              <td style="text-align:right;font-weight:600;">AED {{ '{:,.0f}'.format(booking.total_package_amount) }}</td>
+              <td style="text-align:right;color:{% if booking.balance_pending > 0 %}#EF4444{% else %}#10B981{% endif %};">AED {{ '{:,.0f}'.format(booking.balance_pending) }}</td>
+              <td><a href="/umrah/customer/{{ booking.id }}" class="ib">👁️</a></td>
             </tr>
             {% endfor %}
           </tbody>
         </table>
         {% else %}
-        <div style="text-align:center;padding:60px 20px;color:#94A3B8;">
-          <div style="font-size:48px;margin-bottom:12px;">👥</div>
-          <div style="font-size:14px;color:#64748B;margin-bottom:16px;">No customers in this batch yet</div>
-          <button onclick="document.getElementById('addCustomerModal').style.display='flex'" class="btn-primary">+ Add First Customer</button>
-        </div>
+        <div style="text-align:center;padding:40px;color:#94A3B8;">No customers in this batch yet</div>
         {% endif %}
       </div>
     </div>
-  </div>
 
-  <!-- Add Customer Modal -->
-  <div id="addCustomerModal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);align-items:center;justify-content:center;z-index:1000;overflow-y:auto;padding:20px;">
-    <div style="background:white;border-radius:12px;width:90%;max-width:700px;max-height:90vh;overflow-y:auto;">
-      <div style="padding:20px;border-bottom:1px solid #E2E8F0;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;background:white;z-index:1;">
-        <h2 style="margin:0;font-size:18px;">👤 Add Customer to Batch</h2>
-        <button onclick="document.getElementById('addCustomerModal').style.display='none'" style="background:none;border:none;font-size:24px;cursor:pointer;color:#94A3B8;">&times;</button>
+    <!-- Own Trip: Expenses -->
+    {% if batch.batch_type == 'Own Trip' %}
+    <div class="card">
+      <div class="card-header">
+        <h2>💸 Batch Expenses</h2>
+        <button onclick="document.getElementById('expenseModal').style.display='flex'" class="btn-primary" style="padding:6px 12px;font-size:12px;">+ Add Expense</button>
       </div>
-      
-      <form method="post" action="/umrah/batch/{{ batch.id }}/customer/add" style="padding:20px;">
-        
-        <!-- Link to Existing Customer -->
-        <div class="form-group">
-          <label>Link to Existing Customer (Optional)</label>
-          <select name="customer_id">
-            <option value="">— New Customer (Not linked) —</option>
-            {% for c in customers %}
-            <option value="{{ c.id }}">{{ c.name }} - {{ c.phone }}</option>
+      <div class="card-body" style="padding:0;">
+        {% if batch.expenses %}
+        <table>
+          <thead>
+            <tr>
+              <th>Type</th>
+              <th>Amount</th>
+              <th>Notes</th>
+              <th>Date</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for expense in batch.expenses %}
+            <tr>
+              <td>{{ expense.expense_type }}</td>
+              <td style="text-align:right;font-weight:700;color:#EF4444;">AED {{ '{:,.0f}'.format(expense.amount) }}</td>
+              <td style="font-size:12px;color:#64748B;">{{ expense.notes or '—' }}</td>
+              <td style="font-size:12px;">{{ expense.created_at.strftime('%d %b %Y') }}</td>
+            </tr>
             {% endfor %}
-          </select>
-        </div>
-
-        <div style="background:#F0F9FF;border:1px solid #BAE6FD;border-radius:8px;padding:14px;margin-bottom:16px;">
-          <div style="font-size:11px;font-weight:700;color:#0369A1;text-transform:uppercase;margin-bottom:10px;">Passenger Details</div>
-          
-          <div class="form-group">
-            <label>Passenger Name <span style="color:#EF4444;">*</span></label>
-            <input type="text" name="passenger_name" required placeholder="Full name as per passport">
-          </div>
-
-          <div class="form-row-2">
-            <div class="form-group">
-              <label>Passport Number</label>
-              <input type="text" name="passport_number" placeholder="e.g., AB1234567">
-            </div>
-            <div class="form-group">
-              <label>Passport Expiry</label>
-              <input type="date" name="passport_expiry">
-            </div>
-          </div>
-
-          <div class="form-row-2">
-            <div class="form-group">
-              <label>Date of Birth</label>
-              <input type="date" name="date_of_birth">
-            </div>
-            <div class="form-group">
-              <label>Gender</label>
-              <select name="gender">
-                <option value="">— Select —</option>
-                <option value="Male">Male</option>
-                <option value="Female">Female</option>
-              </select>
-            </div>
-          </div>
-
-          <div class="form-group">
-            <label>Nationality</label>
-            <input type="text" name="nationality" placeholder="e.g., UAE">
-          </div>
-        </div>
-
-        <div style="background:#FEF3C7;border:1px solid #FCD34D;border-radius:8px;padding:14px;margin-bottom:16px;">
-          <div style="font-size:11px;font-weight:700;color:#92400E;text-transform:uppercase;margin-bottom:10px;">Package & Pricing</div>
-          
-          <div class="form-row-2">
-            <div class="form-group">
-              <label>Package Type</label>
-              <select name="package_type">
-                <option value="Economy">Economy</option>
-                <option value="Standard">Standard</option>
-                <option value="VIP">VIP</option>
-                <option value="Premium">Premium</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label>Package Price (AED) <span style="color:#EF4444;">*</span></label>
-              <input type="number" name="package_price" required min="0" step="0.01" placeholder="15000" id="packagePrice">
-            </div>
-          </div>
-
-          <div class="form-row-2">
-            <div class="form-group">
-              <label>Advance Paid (AED)</label>
-              <input type="number" name="advance_paid" min="0" step="0.01" value="0" id="advancePaid">
-            </div>
-            <div class="form-group">
-              <label>Balance Pending (AED)</label>
-              <input type="number" name="balance_pending" min="0" step="0.01" value="0" id="balancePending" readonly style="background:#F9FAFB;">
-            </div>
-          </div>
-        </div>
-
-        <div style="background:#F5F3FF;border:1px solid #C4B5FD;border-radius:8px;padding:14px;margin-bottom:16px;">
-          <div style="font-size:11px;font-weight:700;color:#6B21A8;text-transform:uppercase;margin-bottom:10px;">Individual Costs</div>
-          
-          <div class="form-row-2">
-            <div class="form-group">
-              <label>Visa Cost (AED)</label>
-              <input type="number" name="visa_cost" min="0" step="0.01" value="0" class="cost-input">
-            </div>
-            <div class="form-group">
-              <label>Hotel Cost (AED)</label>
-              <input type="number" name="hotel_cost" min="0" step="0.01" value="0" class="cost-input">
-            </div>
-          </div>
-
-          <div class="form-row-2">
-            <div class="form-group">
-              <label>Flight Cost (AED)</label>
-              <input type="number" name="flight_cost" min="0" step="0.01" value="0" class="cost-input">
-            </div>
-            <div class="form-group">
-              <label>Transport Cost (AED)</label>
-              <input type="number" name="transport_cost" min="0" step="0.01" value="0" class="cost-input">
-            </div>
-          </div>
-
-          <div class="form-row-2">
-            <div class="form-group">
-              <label>Misc Cost (AED)</label>
-              <input type="number" name="misc_cost" min="0" step="0.01" value="0" class="cost-input">
-            </div>
-            <div class="form-group">
-              <label>Total Cost (AED)</label>
-              <input type="number" name="total_cost" min="0" step="0.01" value="0" id="totalCost" readonly style="background:#F9FAFB;">
-            </div>
-          </div>
-
-          <div style="background:#ECFDF5;border:1px solid #6EE7B7;border-radius:6px;padding:10px;margin-top:10px;">
-            <div style="font-size:12px;color:#065F46;"><strong>Profit:</strong> AED <span id="profitDisplay">0</span></div>
-          </div>
-        </div>
-
-        <div class="form-group">
-          <label>Status</label>
-          <select name="status">
-            <option value="Registered">Registered</option>
-            <option value="Confirmed">Confirmed</option>
-            <option value="Completed">Completed</option>
-            <option value="Cancelled">Cancelled</option>
-          </select>
-        </div>
-
-        <div class="form-group">
-          <label>Notes</label>
-          <textarea name="notes" rows="2" placeholder="Additional notes..."></textarea>
-        </div>
-
-        <div style="display:flex;gap:10px;margin-top:20px;">
-          <button type="submit" class="btn-primary" style="flex:1;">Add Customer</button>
-          <button type="button" onclick="document.getElementById('addCustomerModal').style.display='none'" style="flex:1;padding:10px;background:#F1F5F9;border:1px solid #CBD5E1;border-radius:6px;cursor:pointer;">Cancel</button>
-        </div>
-      </form>
+            <tr style="background:#F9FAFB;font-weight:700;">
+              <td>Total Expenses</td>
+              <td style="text-align:right;color:#EF4444;font-size:15px;">AED {{ '{:,.0f}'.format(batch.expenses|sum(attribute='amount')) }}</td>
+              <td colspan="2"></td>
+            </tr>
+          </tbody>
+        </table>
+        {% else %}
+        <div style="text-align:center;padding:40px;color:#94A3B8;">No expenses recorded yet</div>
+        {% endif %}
+      </div>
     </div>
+
+    <!-- Expense Modal -->
+    <div id="expenseModal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);align-items:center;justify-content:center;z-index:1000;">
+      <div style="background:white;border-radius:12px;width:90%;max-width:500px;">
+        <div style="padding:20px;border-bottom:1px solid #E2E8F0;display:flex;justify-content:space-between;align-items:center;">
+          <h2 style="margin:0;font-size:18px;">Add Batch Expense</h2>
+          <button onclick="document.getElementById('expenseModal').style.display='none'" style="background:none;border:none;font-size:24px;cursor:pointer;color:#94A3B8;">&times;</button>
+        </div>
+        
+        <form method="post" action="/umrah/batch/{{ batch.id }}/add-expense" style="padding:20px;">
+          <div class="form-group">
+            <label>Expense Type <span style="color:#EF4444;">*</span></label>
+            <select name="expense_type" required>
+              <option value="">— Select —</option>
+              <option value="Bus">Bus</option>
+              <option value="Hotel Makkah">Hotel Makkah</option>
+              <option value="Hotel Madinah">Hotel Madinah</option>
+              <option value="Flight">Flight</option>
+              <option value="Visa">Visa</option>
+              <option value="Leader Fee">Leader Fee</option>
+              <option value="Transport">Transport</option>
+              <option value="Misc">Miscellaneous</option>
+            </select>
+          </div>
+          
+          <div class="form-group">
+            <label>Amount (AED) <span style="color:#EF4444;">*</span></label>
+            <input type="number" name="amount" required min="0" step="0.01" placeholder="15000">
+          </div>
+          
+          <div class="form-group">
+            <label>Notes</label>
+            <textarea name="notes" rows="2" placeholder="Optional notes..."></textarea>
+          </div>
+          
+          <div style="display:flex;gap:10px;margin-top:20px;">
+            <button type="submit" class="btn-primary" style="flex:1;">Add Expense</button>
+            <button type="button" onclick="document.getElementById('expenseModal').style.display='none'" style="flex:1;padding:10px;background:#F1F5F9;border:1px solid #CBD5E1;border-radius:6px;cursor:pointer;">Cancel</button>
+          </div>
+        </form>
+      </div>
+    </div>
+    {% endif %}
   </div>
-
-  <script>
-    // Auto-calculate balance pending
-    document.getElementById('packagePrice').addEventListener('input', calculateBalance);
-    document.getElementById('advancePaid').addEventListener('input', calculateBalance);
-
-    function calculateBalance() {
-      const price = parseFloat(document.getElementById('packagePrice').value) || 0;
-      const paid = parseFloat(document.getElementById('advancePaid').value) || 0;
-      document.getElementById('balancePending').value = (price - paid).toFixed(2);
-      calculateProfit();
-    }
-
-    // Auto-calculate total cost
-    document.querySelectorAll('.cost-input').forEach(input => {
-      input.addEventListener('input', calculateTotalCost);
-    });
-
-    function calculateTotalCost() {
-      const visa = parseFloat(document.querySelector('[name="visa_cost"]').value) || 0;
-      const hotel = parseFloat(document.querySelector('[name="hotel_cost"]').value) || 0;
-      const flight = parseFloat(document.querySelector('[name="flight_cost"]').value) || 0;
-      const transport = parseFloat(document.querySelector('[name="transport_cost"]').value) || 0;
-      const misc = parseFloat(document.querySelector('[name="misc_cost"]').value) || 0;
-      const total = visa + hotel + flight + transport + misc;
-      document.getElementById('totalCost').value = total.toFixed(2);
-      calculateProfit();
-    }
-
-    // Calculate profit
-    function calculateProfit() {
-      const price = parseFloat(document.getElementById('packagePrice').value) || 0;
-      const cost = parseFloat(document.getElementById('totalCost').value) || 0;
-      const profit = price - cost;
-      document.getElementById('profitDisplay').textContent = profit.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-      document.getElementById('profitDisplay').style.color = profit >= 0 ? '#065F46' : '#991B1B';
-    }
-  </script>
 </body>
 </html>
