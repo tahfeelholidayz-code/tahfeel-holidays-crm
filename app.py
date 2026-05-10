@@ -269,10 +269,7 @@ class Job(db.Model):
     __table_args__ = {'extend_existing': True}
     id = db.Column(db.Integer, primary_key=True)
     customer_id = db.Column(db.Integer, db.ForeignKey('customer.id'), nullable=False)
-    # Vendor fields - deferred until database migration completes
-    # vendor_id = db.Column(db.Integer, db.ForeignKey('vendor.id'), nullable=True)
-    # vendor_amount = db.Column(db.Float, default=0)
-    # vendor_paid = db.Column(db.Float, default=0)
+    vendor_id = db.Column(db.Integer, db.ForeignKey('vendor.id'), nullable=True)
     job_type = db.Column(db.String(100), nullable=False)
     assigned_to = db.Column(db.Integer, db.ForeignKey('user.id'))
     due_date = db.Column(db.DateTime)
@@ -282,6 +279,8 @@ class Job(db.Model):
     service_note = db.Column(db.String(200))
     amount_invoiced = db.Column(db.Float, default=0)
     amount_received = db.Column(db.Float, default=0)
+    vendor_amount = db.Column(db.Float, default=0)
+    vendor_paid = db.Column(db.Float, default=0)
     num_persons = db.Column(db.Integer, default=1)
     finance_approved_by = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
     finance_approved_at = db.Column(db.DateTime, nullable=True)
@@ -304,7 +303,7 @@ class Job(db.Model):
     assignee = db.relationship('User', foreign_keys=[assigned_to])
     creator = db.relationship('User', foreign_keys=[created_by])
     finance_approver = db.relationship('User', foreign_keys=[finance_approved_by])
-    # vendor = db.relationship('Vendor', foreign_keys=[vendor_id])  # Disabled until vendor_id column exists
+    vendor = db.relationship('Vendor', foreign_keys=[vendor_id])
     updates = db.relationship('JobUpdate', backref='job', lazy=True, order_by='JobUpdate.created_at.desc()')
     subtasks = db.relationship('SubTask', backref='job', lazy=True, order_by='SubTask.created_at')
     partial_revenues = db.relationship('PartialRevenue', backref='job', lazy=True, order_by='PartialRevenue.revenue_date.desc()')
@@ -2358,17 +2357,22 @@ def add_job():
         due = request.form.get('due_date')
         due_dt = datetime.strptime(due, '%Y-%m-%d') if due else None
         amount_invoiced = request.form.get('amount_invoiced') or 0
+        vendor_amount = request.form.get('vendor_amount') or 0
         assigned = request.form.get('assigned_to')
+        vendor_id = request.form.get('vendor_id')
         job = Job(
             customer_id=int(request.form['customer_id']),
             job_type=request.form['job_type'],
             assigned_to=int(assigned) if assigned else None,
+            vendor_id=int(vendor_id) if vendor_id else None,
             due_date=due_dt,
             priority=request.form.get('priority', 'Medium'),
             internal_notes=request.form.get('internal_notes'),
             service_note=request.form.get('service_note', '').strip() or None,
             amount_invoiced=float(amount_invoiced),
             amount_received=0,
+            vendor_amount=float(vendor_amount),
+            vendor_paid=0,
             num_persons=int(request.form.get('num_persons') or 1),
             created_by=session['user_id'],
             status='Assigned'
