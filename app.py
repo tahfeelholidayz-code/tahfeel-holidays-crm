@@ -4699,15 +4699,20 @@ def add_umrah_customer():
         
         # Create passengers
         for i in range(len(names)):
+            # Handle children with minimal data - use primary's contact info
+            phone = phones[i] if phones[i] and phones[i] != 'Same as primary' else phones[0]
+            emergency = emergencies[i] if emergencies[i] and emergencies[i] != 'Same as primary' else emergencies[0]
+            address = addresses[i] if addresses[i] and addresses[i] != 'Same as primary' else addresses[0]
+            
             passenger = UmrahPassenger(
                 booking_id=booking.id,
                 passenger_name=names[i],
-                phone_number=phones[i],
+                phone_number=phone,
                 email=emails[i] if emails[i] else None,
-                emergency_contact=emergencies[i],
+                emergency_contact=emergency,
                 passport_number=passports[i],
-                address=addresses[i],
-                age=int(ages[i]) if ages[i] else None,
+                address=address,
+                age=int(ages[i]) if ages[i] and ages[i].strip() else None,
                 passenger_type=types[i],
                 gender=genders[i],
                 is_primary=bool(int(is_primaries[i]))
