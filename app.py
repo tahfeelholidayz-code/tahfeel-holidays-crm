@@ -1055,7 +1055,7 @@ def all_leads():
 @app.route('/leads/export')
 @login_required
 def export_leads():
-    if session['role'] not in ['admin']:
+    if session['role'] not in ['staff', 'admin']:
         flash('Access denied')
         return redirect(url_for('all_leads'))
     from openpyxl import Workbook
@@ -1164,7 +1164,7 @@ def lead_detail(lead_id):
 @app.route('/leads/import', methods=['GET', 'POST'])
 @login_required
 def import_leads():
-    if session.get('role') not in ['admin']:
+    if session.get('role') not in ['staff', 'admin']:
         flash('Access denied')
         return redirect(url_for('dashboard'))
     if request.method == 'POST':
