@@ -304,7 +304,7 @@ class Job(db.Model):
     assignee = db.relationship('User', foreign_keys=[assigned_to])
     creator = db.relationship('User', foreign_keys=[created_by])
     finance_approver = db.relationship('User', foreign_keys=[finance_approved_by])
-    vendor = db.relationship('Vendor', foreign_keys=[vendor_id])
+    # vendor = db.relationship('Vendor', foreign_keys=[vendor_id])  # Disabled until vendor_id column exists
     updates = db.relationship('JobUpdate', backref='job', lazy=True, order_by='JobUpdate.created_at.desc()')
     subtasks = db.relationship('SubTask', backref='job', lazy=True, order_by='SubTask.created_at')
     partial_revenues = db.relationship('PartialRevenue', backref='job', lazy=True, order_by='PartialRevenue.revenue_date.desc()')
