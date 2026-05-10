@@ -2689,12 +2689,18 @@ def close_job(job_id):
         if ai: job.amount_invoiced = float(ai)
         if ar: job.amount_received = float(ar)
         
+        # Validate: Cannot close with pending payment
+        if (job.amount_invoiced or 0) > (job.amount_received or 0):
+            pending = (job.amount_invoiced or 0) - (job.amount_received or 0)
+            flash(f'Cannot close task with pending payment of AED {pending:,.0f}. Customer must pay fully first.', 'error')
+            return redirect(url_for('job_detail', job_id=job_id))
+        
         # Revenue Recognition (REQUIRED)
         revenue_amount = request.form.get('revenue_amount')
         revenue_date = request.form.get('revenue_date')
         
         if not revenue_amount or not revenue_date:
-            flash('Revenue amount and date are required.', 'error')
+            flash('Revenue amount and date are required to close task.', 'error')
             return redirect(url_for('job_detail', job_id=job_id))
         
         job.revenue_amount = float(revenue_amount)
@@ -2712,8 +2718,6 @@ def close_job(job_id):
         # Mark as Closed
         job.status = 'Closed'
         job.completed_at = now_dubai()
-        job.finance_approved_by = session['user_id']
-        job.finance_approved_at = now_dubai()
         if finance_notes:
             job.finance_notes = finance_notes
         
@@ -4413,11 +4417,31 @@ def vendors():
     
     # Calculate vendor stats
     for vendor in vendors:
+        # Amounts from VendorPayment table
         vendor_payments = VendorPayment.query.filter_by(vendor_id=vendor.id).all()
-        vendor.total_due = sum(p.amount_due for p in vendor_payments)
-        vendor.total_paid = sum(p.amount_paid for p in vendor_payments)
+        payment_due = sum(p.amount_due for p in vendor_payments)
+        payment_paid = sum(p.amount_paid for p in vendor_payments)
+        
+        # Amounts from Job table (tasks assigned to this vendor)
+        from sqlalchemy import func
+        job_stats = db.session.query(
+            func.sum(Job.vendor_amount).label('total_amount'),
+            func.sum(Job.vendor_paid).label('total_paid')
+        ).filter(Job.vendor_id == vendor.id).first()
+        
+        task_amount = job_stats.total_amount or 0
+        task_paid = job_stats.total_paid or 0
+        
+        # Combine both sources
+        vendor.total_due = payment_due + task_amount
+        vendor.total_paid = payment_paid + task_paid
         vendor.total_pending = vendor.total_due - vendor.total_paid
         vendor.payment_count = len(vendor_payments)
+        
+        # Additional stats for tasks
+        vendor.task_count = Job.query.filter_by(vendor_id=vendor.id).count()
+        vendor.task_amount = task_amount
+        vendor.task_paid = task_paid
     
     return render_template('vendors.html', vendors=vendors)
 

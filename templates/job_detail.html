@@ -135,8 +135,8 @@
     {% endif %}
 
 
-    <!-- Close Task Form (Finance/Admin only when Done) -->
-    {% if job.status == 'Done' and session.role in ['finance','admin'] %}
+    <!-- Close Task Form (Anyone when Done) -->
+    {% if job.status == 'Done' %}
         <form method="post" action="/jobs/{{ job.id }}/close" id="closeTaskForm">
           
           <!-- Customer Payment Summary -->

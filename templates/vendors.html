@@ -54,10 +54,29 @@
                 <div style="font-size:12px;">{{ vendor.phone or '—' }}</div>
                 {% if vendor.email %}<div style="font-size:11px;color:var(--text-muted);">{{ vendor.email }}</div>{% endif %}
               </td>
-              <td style="text-align:right;font-weight:600;">AED {{ "{:,.2f}".format(vendor.total_due) }}</td>
-              <td style="text-align:right;color:var(--success);">AED {{ "{:,.2f}".format(vendor.total_paid) }}</td>
-              <td style="text-align:right;color:var(--danger);font-weight:600;">AED {{ "{:,.2f}".format(vendor.total_pending) }}</td>
-              <td style="text-align:center;">{{ vendor.payment_count }}</td>
+              <td style="text-align:right;font-weight:600;">
+                AED {{ "{:,.0f}".format(vendor.total_due) }}
+                {% if vendor.task_amount > 0 %}
+                <div style="font-size:10px;color:#94A3B8;margin-top:2px;" title="From tasks">
+                  📋 Tasks: {{ "{:,.0f}".format(vendor.task_amount) }}
+                </div>
+                {% endif %}
+              </td>
+              <td style="text-align:right;color:var(--success);">
+                AED {{ "{:,.0f}".format(vendor.total_paid) }}
+                {% if vendor.task_paid > 0 %}
+                <div style="font-size:10px;color:#94A3B8;margin-top:2px;" title="Paid from tasks">
+                  📋 Tasks: {{ "{:,.0f}".format(vendor.task_paid) }}
+                </div>
+                {% endif %}
+              </td>
+              <td style="text-align:right;color:var(--danger);font-weight:600;">AED {{ "{:,.0f}".format(vendor.total_pending) }}</td>
+              <td style="text-align:center;">
+                {{ vendor.task_count or 0 }}
+                {% if vendor.task_count > 0 %}
+                <div style="font-size:10px;color:#94A3B8;">tasks</div>
+                {% endif %}
+              </td>
               <td>
                 <div style="display:flex;gap:5px;">
                   {% if session.role == 'admin' %}
