@@ -338,67 +338,138 @@ class Expense(db.Model):
 # UMRAH MANAGEMENT MODELS
 # ============================================
 
+# ============================================
+# NEW UMRAH MANAGEMENT MODELS
+# ============================================
+
+class UmrahBooking(db.Model):
+    """Main umrah booking record (one primary customer + multiple passengers)"""
+    id = db.Column(db.Integer, primary_key=True)
+    customer_id = db.Column(db.Integer, db.ForeignKey('customer.id'))
+    
+    # Booking summary
+    adults_count = db.Column(db.Integer, default=0)
+    children_count = db.Column(db.Integer, default=0)
+    total_people = db.Column(db.Integer, default=0)
+    
+    # Pricing
+    adult_price = db.Column(db.Float, default=0)
+    child_price = db.Column(db.Float, default=0)
+    total_package_amount = db.Column(db.Float, default=0)
+    amount_received = db.Column(db.Float, default=0)
+    balance_pending = db.Column(db.Float, default=0)
+    
+    # Batch assignment
+    batch_id = db.Column(db.Integer, db.ForeignKey('umrah_batch.id'))
+    status = db.Column(db.String(50), default='Not Assigned')
+    
+    created_at = db.Column(db.DateTime, default=datetime.now)
+    updated_at = db.Column(db.DateTime, default=datetime.now, onupdate=datetime.now)
+    
+    # Relationships
+    customer = db.relationship('Customer', backref='umrah_bookings')
+    passengers = db.relationship('UmrahPassenger', backref='booking', cascade='all, delete-orphan')
+    payments = db.relationship('UmrahPayment', backref='booking', cascade='all, delete-orphan')
+    third_party_detail = db.relationship('UmrahThirdPartyDetail', backref='booking', uselist=False)
+
+class UmrahPassenger(db.Model):
+    """Individual passengers in each booking"""
+    id = db.Column(db.Integer, primary_key=True)
+    booking_id = db.Column(db.Integer, db.ForeignKey('umrah_booking.id'), nullable=False)
+    
+    # Personal details
+    passenger_name = db.Column(db.String(200), nullable=False)
+    phone_number = db.Column(db.String(50), nullable=False)
+    email = db.Column(db.String(200))
+    emergency_contact = db.Column(db.String(50), nullable=False)
+    passport_number = db.Column(db.String(50), nullable=False)
+    address = db.Column(db.Text, nullable=False)
+    age = db.Column(db.Integer)
+    passenger_type = db.Column(db.String(10), nullable=False)  # Adult, Child
+    gender = db.Column(db.String(10), nullable=False)  # Male, Female
+    is_primary = db.Column(db.Boolean, default=False)
+    
+    created_at = db.Column(db.DateTime, default=datetime.now)
+
 class UmrahBatch(db.Model):
-    """Umrah group batches"""
+    """Umrah batches (Own Trip or Third Party)"""
     id = db.Column(db.Integer, primary_key=True)
     batch_number = db.Column(db.String(50), unique=True, nullable=False)
     batch_name = db.Column(db.String(200))
-    departure_date = db.Column(db.Date, nullable=False)
-    return_date = db.Column(db.Date, nullable=False)
-    hotel_name = db.Column(db.String(200))
+    batch_type = db.Column(db.String(20), nullable=False)  # Own Trip, Third Party
+    
+    # Third party details
+    third_party_agency = db.Column(db.String(200))
+    
+    # Trip details
+    departure_date = db.Column(db.Date)
+    return_date = db.Column(db.Date)
     hotel_makkah = db.Column(db.String(200))
     hotel_madinah = db.Column(db.String(200))
     flight_details = db.Column(db.Text)
     transport_details = db.Column(db.Text)
-    total_capacity = db.Column(db.Integer, default=0)
-    total_cost = db.Column(db.Float, default=0)
-    status = db.Column(db.String(20), default='Planning')  # Planning, Confirmed, In Progress, Completed, Cancelled
+    
+    # Status
+    status = db.Column(db.String(20), default='Planning')
     notes = db.Column(db.Text)
+    
     created_by = db.Column(db.Integer, db.ForeignKey('user.id'))
     created_at = db.Column(db.DateTime, default=datetime.now)
     updated_at = db.Column(db.DateTime, default=datetime.now, onupdate=datetime.now)
     
-    customers = db.relationship('UmrahCustomer', backref='batch', cascade='all, delete-orphan')
-    expenses = db.relationship('Expense', backref='umrah_batch')
+    # Relationships
+    bookings = db.relationship('UmrahBooking', backref='batch')
+    expenses = db.relationship('UmrahBatchExpense', backref='batch', cascade='all, delete-orphan')
+    third_party_details = db.relationship('UmrahThirdPartyDetail', backref='batch')
 
-class UmrahCustomer(db.Model):
-    """Customers in each Umrah batch"""
+class UmrahBatchExpense(db.Model):
+    """Expenses for Own Trip batches"""
     id = db.Column(db.Integer, primary_key=True)
     batch_id = db.Column(db.Integer, db.ForeignKey('umrah_batch.id'), nullable=False)
+    expense_type = db.Column(db.String(100), nullable=False)
+    amount = db.Column(db.Float, nullable=False)
+    notes = db.Column(db.Text)
+    created_at = db.Column(db.DateTime, default=datetime.now)
+
+class UmrahThirdPartyDetail(db.Model):
+    """Revenue tracking for Third Party bookings"""
+    id = db.Column(db.Integer, primary_key=True)
+    batch_id = db.Column(db.Integer, db.ForeignKey('umrah_batch.id'), nullable=False)
+    booking_id = db.Column(db.Integer, db.ForeignKey('umrah_booking.id'), nullable=False)
+    
+    charged_to_customer = db.Column(db.Float, default=0)
+    given_to_agency = db.Column(db.Float, default=0)
+    we_keep = db.Column(db.Float, default=0)
+    revenue = db.Column(db.Float, default=0)
+    
+    created_at = db.Column(db.DateTime, default=datetime.now)
+
+class UmrahPayment(db.Model):
+    """Payment history for bookings"""
+    id = db.Column(db.Integer, primary_key=True)
+    booking_id = db.Column(db.Integer, db.ForeignKey('umrah_booking.id'), nullable=False)
+    amount = db.Column(db.Float, nullable=False)
+    payment_date = db.Column(db.Date, nullable=False)
+    payment_method = db.Column(db.String(50))
+    notes = db.Column(db.Text)
+    received_by = db.Column(db.Integer, db.ForeignKey('user.id'))
+    created_at = db.Column(db.DateTime, default=datetime.now)
+
+# Keep old class for backwards compatibility (will be removed later)
+class UmrahCustomer(db.Model):
+    """DEPRECATED - Use UmrahBooking instead"""
+    __table_args__ = {'extend_existing': True}
+    id = db.Column(db.Integer, primary_key=True)
+    batch_id = db.Column(db.Integer)
     customer_id = db.Column(db.Integer, db.ForeignKey('customer.id'))
-    task_id = db.Column(db.Integer, db.ForeignKey('job.id'))
-    
-    # Passenger Details
-    passenger_name = db.Column(db.String(200), nullable=False)
-    passport_number = db.Column(db.String(50))
-    passport_expiry = db.Column(db.Date)
-    date_of_birth = db.Column(db.Date)
-    gender = db.Column(db.String(10))
-    nationality = db.Column(db.String(50))
-    
-    # Package & Pricing
-    package_type = db.Column(db.String(50))
+    passenger_name = db.Column(db.String(200))
     package_price = db.Column(db.Float, default=0)
     advance_paid = db.Column(db.Float, default=0)
     balance_pending = db.Column(db.Float, default=0)
-    
-    # Individual Costs
-    visa_cost = db.Column(db.Float, default=0)
-    hotel_cost = db.Column(db.Float, default=0)
-    flight_cost = db.Column(db.Float, default=0)
-    transport_cost = db.Column(db.Float, default=0)
-    misc_cost = db.Column(db.Float, default=0)
     total_cost = db.Column(db.Float, default=0)
-    
-    # Calculated
     profit = db.Column(db.Float, default=0)
-    
     status = db.Column(db.String(20), default='Registered')
-    notes = db.Column(db.Text)
     created_at = db.Column(db.DateTime, default=datetime.now)
-    updated_at = db.Column(db.DateTime, default=datetime.now, onupdate=datetime.now)
-    
-    customer = db.relationship('Customer', backref='umrah_bookings')
 
 
 class Job(db.Model):
