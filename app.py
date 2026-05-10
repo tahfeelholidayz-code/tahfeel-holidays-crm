@@ -269,7 +269,7 @@ class Job(db.Model):
     __table_args__ = {'extend_existing': True}
     id = db.Column(db.Integer, primary_key=True)
     customer_id = db.Column(db.Integer, db.ForeignKey('customer.id'), nullable=False)
-    vendor_id = db.Column(db.Integer, db.ForeignKey('vendor.id'), nullable=True)
+    vendor_id = db.Column(db.Integer, nullable=True)  # FK removed temporarily - add manually after migration
     job_type = db.Column(db.String(100), nullable=False)
     assigned_to = db.Column(db.Integer, db.ForeignKey('user.id'))
     due_date = db.Column(db.DateTime)
@@ -303,7 +303,14 @@ class Job(db.Model):
     assignee = db.relationship('User', foreign_keys=[assigned_to])
     creator = db.relationship('User', foreign_keys=[created_by])
     finance_approver = db.relationship('User', foreign_keys=[finance_approved_by])
-    vendor = db.relationship('Vendor', foreign_keys=[vendor_id])
+    
+    @property
+    def vendor(self):
+        """Get vendor by ID without FK constraint"""
+        if self.vendor_id:
+            return Vendor.query.get(self.vendor_id)
+        return None
+    
     updates = db.relationship('JobUpdate', backref='job', lazy=True, order_by='JobUpdate.created_at.desc()')
     subtasks = db.relationship('SubTask', backref='job', lazy=True, order_by='SubTask.created_at')
     partial_revenues = db.relationship('PartialRevenue', backref='job', lazy=True, order_by='PartialRevenue.revenue_date.desc()')
