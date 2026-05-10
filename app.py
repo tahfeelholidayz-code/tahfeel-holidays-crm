@@ -4617,148 +4617,56 @@ def admin_delete_partner(partner_id):
 # ══════════════════════════════════════════════════════════════════════════════
 
 # ============================================
-# UMRAH MANAGEMENT ROUTES
+# UMRAH MANAGEMENT ROUTES (NEW)
 # ============================================
 
-@app.route('/umrah/batches')
+@app.route('/umrah/customers')
+@app.route('/umrah/batches')  # Keep for backwards compatibility
 @login_required
-def umrah_batches():
-    """List all umrah batches"""
-    batches = UmrahBatch.query.order_by(UmrahBatch.departure_date.desc()).all()
-    return render_template('umrah_batches.html', batches=batches)
+def umrah_customers():
+    """List all umrah customer bookings"""
+    bookings = UmrahBooking.query.order_by(UmrahBooking.created_at.desc()).all()
+    
+    # Calculate stats
+    total_people = sum(b.total_people for b in bookings)
+    total_adults = sum(b.adults_count for b in bookings)
+    total_children = sum(b.children_count for b in bookings)
+    total_invoiced = sum(b.total_package_amount for b in bookings)
+    total_balance = sum(b.balance_pending for b in bookings)
+    not_assigned_count = sum(1 for b in bookings if b.status == 'Not Assigned')
+    
+    return render_template('umrah_customers.html', 
+                         bookings=bookings,
+                         total_people=total_people,
+                         total_adults=total_adults,
+                         total_children=total_children,
+                         total_invoiced=total_invoiced,
+                         total_balance=total_balance,
+                         not_assigned_count=not_assigned_count)
 
-@app.route('/umrah/batch/add', methods=['POST'])
+@app.route('/umrah/customer/<int:booking_id>')
 @login_required
-def add_umrah_batch():
-    """Create new umrah batch"""
-    try:
-        # Get and validate form data
-        total_capacity = request.form.get('total_capacity')
-        total_cost = request.form.get('total_cost', '').strip()
-        
-        batch = UmrahBatch(
-            batch_number=request.form.get('batch_number'),
-            batch_name=request.form.get('batch_name'),
-            departure_date=datetime.strptime(request.form.get('departure_date'), '%Y-%m-%d').date(),
-            return_date=datetime.strptime(request.form.get('return_date'), '%Y-%m-%d').date(),
-            hotel_makkah=request.form.get('hotel_makkah'),
-            hotel_madinah=request.form.get('hotel_madinah'),
-            flight_details=request.form.get('flight_details'),
-            transport_details=request.form.get('transport_details'),
-            total_capacity=int(total_capacity) if total_capacity else 0,
-            total_cost=float(total_cost) if total_cost else 0,
-            status=request.form.get('status', 'Planning'),
-            notes=request.form.get('notes'),
-            created_by=session['user_id']
-        )
-        db.session.add(batch)
-        db.session.commit()
-        flash(f'Umrah batch {batch.batch_number} created successfully!')
-        return redirect(url_for('umrah_batch_detail', batch_id=batch.id))
-    except Exception as e:
-        db.session.rollback()
-        flash(f'Error creating batch: {str(e)}', 'error')
-        return redirect(url_for('umrah_batches'))
+def umrah_customer_detail(booking_id):
+    """View customer booking details"""
+    booking = UmrahBooking.query.get_or_404(booking_id)
+    batches = UmrahBatch.query.filter_by(status='Planning').all()  # Available batches
+    return render_template('umrah_customer_detail.html', booking=booking, batches=batches)
 
-@app.route('/umrah/batch/<int:batch_id>')
+@app.route('/umrah/customer/<int:booking_id>/delete')
 @login_required
-def umrah_batch_detail(batch_id):
-    """View batch details and customers"""
-    batch = UmrahBatch.query.get_or_404(batch_id)
-    customers = Customer.query.order_by(Customer.name).all()
-    return render_template('umrah_batch_detail.html', batch=batch, customers=customers)
-
-@app.route('/umrah/batch/<int:batch_id>/customer/add', methods=['POST'])
-@login_required
-def add_umrah_customer(batch_id):
-    """Add customer to umrah batch"""
-    batch = UmrahBatch.query.get_or_404(batch_id)
+def delete_umrah_customer(booking_id):
+    """Delete customer booking"""
+    booking = UmrahBooking.query.get_or_404(booking_id)
     
     try:
-        # Get form data with validation for empty strings
-        customer_id = request.form.get('customer_id')
-        package_price = request.form.get('package_price', '').strip()
-        advance_paid = request.form.get('advance_paid', '').strip()
-        
-        package_price = float(package_price) if package_price else 0
-        advance_paid = float(advance_paid) if advance_paid else 0
-        
-        # Calculate costs
-        visa_cost = request.form.get('visa_cost', '').strip()
-        hotel_cost = request.form.get('hotel_cost', '').strip()
-        flight_cost = request.form.get('flight_cost', '').strip()
-        transport_cost = request.form.get('transport_cost', '').strip()
-        misc_cost = request.form.get('misc_cost', '').strip()
-        
-        visa_cost = float(visa_cost) if visa_cost else 0
-        hotel_cost = float(hotel_cost) if hotel_cost else 0
-        flight_cost = float(flight_cost) if flight_cost else 0
-        transport_cost = float(transport_cost) if transport_cost else 0
-        misc_cost = float(misc_cost) if misc_cost else 0
-        
-        total_cost = visa_cost + hotel_cost + flight_cost + transport_cost + misc_cost
-        
-        # Calculate balance and profit
-        balance_pending = package_price - advance_paid
-        profit = package_price - total_cost
-        
-        # Parse dates
-        passport_expiry = request.form.get('passport_expiry', '').strip()
-        date_of_birth = request.form.get('date_of_birth', '').strip()
-        
-        # Create umrah customer
-        umrah_customer = UmrahCustomer(
-            batch_id=batch_id,
-            customer_id=int(customer_id) if customer_id else None,
-            passenger_name=request.form.get('passenger_name'),
-            passport_number=request.form.get('passport_number'),
-            passport_expiry=datetime.strptime(passport_expiry, '%Y-%m-%d').date() if passport_expiry else None,
-            date_of_birth=datetime.strptime(date_of_birth, '%Y-%m-%d').date() if date_of_birth else None,
-            gender=request.form.get('gender'),
-            nationality=request.form.get('nationality'),
-            package_type=request.form.get('package_type'),
-            package_price=package_price,
-            advance_paid=advance_paid,
-            balance_pending=balance_pending,
-            visa_cost=visa_cost,
-            hotel_cost=hotel_cost,
-            flight_cost=flight_cost,
-            transport_cost=transport_cost,
-            misc_cost=misc_cost,
-            total_cost=total_cost,
-            profit=profit,
-            status=request.form.get('status', 'Registered'),
-            notes=request.form.get('notes')
-        )
-        
-        db.session.add(umrah_customer)
+        db.session.delete(booking)
         db.session.commit()
-        
-        flash(f'Customer {umrah_customer.passenger_name} added to batch successfully!')
-        return redirect(url_for('umrah_batch_detail', batch_id=batch_id))
-        
-    except Exception as e:
-        db.session.rollback()
-        flash(f'Error adding customer: {str(e)}', 'error')
-        return redirect(url_for('umrah_batch_detail', batch_id=batch_id))
-
-@app.route('/umrah/customer/<int:customer_id>/delete')
-@login_required
-def delete_umrah_customer(customer_id):
-    """Remove customer from batch"""
-    customer = UmrahCustomer.query.get_or_404(customer_id)
-    batch_id = customer.batch_id
-    
-    try:
-        db.session.delete(customer)
-        db.session.commit()
-        flash(f'Customer {customer.passenger_name} removed from batch.')
-        return redirect(url_for('umrah_batch_detail', batch_id=batch_id))
+        flash('Umrah booking deleted successfully.')
+        return redirect(url_for('umrah_customers'))
     except Exception as e:
         db.session.rollback()
         flash(f'Error: {str(e)}', 'error')
-        return redirect(url_for('umrah_batch_detail', batch_id=batch_id))
-
+        return redirect(url_for('umrah_customers')),
 # ============================================
 # VENDORS
 # ============================================

@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tahfeel CRM — Umrah Customers</title>
+  <link rel="stylesheet" href="/static/css/tahfeel.css">
+  <link rel="icon" href="/static/img/logo_white.png" type="image/png">
+</head>
+<body>
+  {%- from 'macros.html' import topbar, nav -%}
+  {{ topbar() }}
+  {{ nav('umrah') }}
+  
+  <div class="container">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}{% for cat, msg in messages %}<div class="flash {% if cat == 'error' %}error{% elif cat == 'warning' %}warning{% endif %}">{{ msg }}</div>{% endfor %}{% endif %}
+    {% endwith %}
+
+    <div class="page-head">
+      <div>
+        <div class="page-head-title">🕌 Umrah Customers</div>
+        <div style="font-size:12px;color:#94A3B8;margin-top:2px;">Manage Umrah bookings and passengers</div>
+      </div>
+      <a href="/umrah/customer/add" class="btn-primary" style="text-decoration:none;">+ Add Customer</a>
+    </div>
+
+    <!-- Stats Overview -->
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;margin-bottom:20px;">
+      <div class="card-stat" style="background:#F0F9FF;border-color:#BAE6FD;">
+        <div class="cs-left">
+          <div class="cs-label">Total Bookings</div>
+          <div class="cs-value">{{ bookings|length }}</div>
+        </div>
+        <div class="cs-icon" style="background:#0EA5E9;color:white;">📋</div>
+      </div>
+      
+      <div class="card-stat" style="background:#FEF3C7;border-color:#FCD34D;">
+        <div class="cs-left">
+          <div class="cs-label">Total People</div>
+          <div class="cs-value">{{ total_people }} ({{ total_adults }}A + {{ total_children }}C)</div>
+        </div>
+        <div class="cs-icon" style="background:#F59E0B;color:white;">👥</div>
+      </div>
+      
+      <div class="card-stat" style="background:#ECFDF5;border-color:#6EE7B7;">
+        <div class="cs-left">
+          <div class="cs-label">Total Invoiced</div>
+          <div class="cs-value" style="font-size:15px;">AED {{ '{:,.0f}'.format(total_invoiced) }}</div>
+        </div>
+        <div class="cs-icon" style="background:#10B981;color:white;">💰</div>
+      </div>
+      
+      <div class="card-stat" style="background:#FEE2E2;border-color:#FCA5A5;">
+        <div class="cs-left">
+          <div class="cs-label">Balance Pending</div>
+          <div class="cs-value" style="font-size:15px;">AED {{ '{:,.0f}'.format(total_balance) }}</div>
+        </div>
+        <div class="cs-icon" style="background:#EF4444;color:white;">⚠</div>
+      </div>
+      
+      <div class="card-stat" style="background:#F5F3FF;border-color:#C4B5FD;">
+        <div class="cs-left">
+          <div class="cs-label">Not Assigned</div>
+          <div class="cs-value">{{ not_assigned_count }}</div>
+        </div>
+        <div class="cs-icon" style="background:#8B5CF6;color:white;">📌</div>
+      </div>
+    </div>
+
+    <!-- Customers List -->
+    {% if bookings %}
+    <div class="card">
+      <div class="card-body" style="padding:0;">
+        <table>
+          <thead>
+            <tr>
+              <th>Primary Customer</th>
+              <th>People</th>
+              <th>Package Amount</th>
+              <th>Received</th>
+              <th>Balance</th>
+              <th>Batch</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for booking in bookings %}
+            {% set primary = booking.passengers|selectattr('is_primary')|first %}
+            <tr>
+              <td>
+                <div style="font-weight:600;color:var(--text-primary);">
+                  {{ primary.passenger_name if primary else 'N/A' }}
+                </div>
+                {% if primary and primary.phone_number %}
+                <div style="font-size:11px;color:#94A3B8;">{{ primary.phone_number }}</div>
+                {% endif %}
+              </td>
+              <td>
+                <div style="font-weight:600;">{{ booking.total_people }}</div>
+                <div style="font-size:11px;color:#64748B;">{{ booking.adults_count }} Adults, {{ booking.children_count }} Children</div>
+              </td>
+              <td style="text-align:right;font-weight:600;">AED {{ '{:,.0f}'.format(booking.total_package_amount) }}</td>
+              <td style="text-align:right;color:#10B981;">AED {{ '{:,.0f}'.format(booking.amount_received) }}</td>
+              <td style="text-align:right;color:{% if booking.balance_pending > 0 %}#EF4444{% else %}#10B981{% endif %};font-weight:600;">
+                AED {{ '{:,.0f}'.format(booking.balance_pending) }}
+              </td>
+              <td>
+                {% if booking.batch %}
+                  <span style="background:#ECFDF5;color:#065F46;padding:4px 8px;border-radius:10px;font-size:11px;font-weight:600;">
+                    {{ booking.batch.batch_number }}
+                  </span>
+                {% else %}
+                  <span style="background:#FEF3C7;color:#92400E;padding:4px 8px;border-radius:10px;font-size:11px;font-weight:600;">
+                    Not Assigned
+                  </span>
+                {% endif %}
+              </td>
+              <td>
+                <span style="background:{% if booking.status == 'Not Assigned' %}#FEF3C7{% elif booking.status == 'In Batch' %}#ECFDF5{% else %}#F1F5F9{% endif %};color:{% if booking.status == 'Not Assigned' %}#92400E{% elif booking.status == 'In Batch' %}#065F46{% else %}#475569{% endif %};padding:4px 8px;border-radius:10px;font-size:10px;font-weight:600;">
+                  {{ booking.status }}
+                </span>
+              </td>
+              <td>
+                <div style="display:flex;gap:5px;">
+                  <a href="/umrah/customer/{{ booking.id }}" class="ib" title="View">👁️</a>
+                  <a href="/umrah/customer/{{ booking.id }}/edit" class="ib" title="Edit">✏️</a>
+                  <a href="/umrah/customer/{{ booking.id }}/delete" class="ib ib-del" onclick="return confirm('Delete this booking and all passengers?')" title="Delete">🗑️</a>
+                </div>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    {% else %}
+    <div class="card">
+      <div class="card-body" style="text-align:center;padding:60px 20px;color:#94A3B8;">
+        <div style="font-size:48px;margin-bottom:16px;">🕌</div>
+        <div style="font-size:16px;font-weight:600;color:#64748B;margin-bottom:8px;">No Umrah Customers Yet</div>
+        <div style="font-size:13px;margin-bottom:20px;">Add your first Umrah customer booking</div>
+        <a href="/umrah/customer/add" class="btn-primary" style="text-decoration:none;">+ Add First Customer</a>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</body>
+</html>
