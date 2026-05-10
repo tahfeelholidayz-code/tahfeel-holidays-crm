@@ -4561,6 +4561,10 @@ def umrah_batches():
 def add_umrah_batch():
     """Create new umrah batch"""
     try:
+        # Get and validate form data
+        total_capacity = request.form.get('total_capacity')
+        total_cost = request.form.get('total_cost', '').strip()
+        
         batch = UmrahBatch(
             batch_number=request.form.get('batch_number'),
             batch_name=request.form.get('batch_name'),
@@ -4570,8 +4574,8 @@ def add_umrah_batch():
             hotel_madinah=request.form.get('hotel_madinah'),
             flight_details=request.form.get('flight_details'),
             transport_details=request.form.get('transport_details'),
-            total_capacity=int(request.form.get('total_capacity', 0)),
-            total_cost=float(request.form.get('total_cost', 0)),
+            total_capacity=int(total_capacity) if total_capacity else 0,
+            total_cost=float(total_cost) if total_cost else 0,
             status=request.form.get('status', 'Planning'),
             notes=request.form.get('notes'),
             created_by=session['user_id']
@@ -4600,22 +4604,36 @@ def add_umrah_customer(batch_id):
     batch = UmrahBatch.query.get_or_404(batch_id)
     
     try:
-        # Get form data
+        # Get form data with validation for empty strings
         customer_id = request.form.get('customer_id')
-        package_price = float(request.form.get('package_price', 0))
-        advance_paid = float(request.form.get('advance_paid', 0))
+        package_price = request.form.get('package_price', '').strip()
+        advance_paid = request.form.get('advance_paid', '').strip()
+        
+        package_price = float(package_price) if package_price else 0
+        advance_paid = float(advance_paid) if advance_paid else 0
         
         # Calculate costs
-        visa_cost = float(request.form.get('visa_cost', 0))
-        hotel_cost = float(request.form.get('hotel_cost', 0))
-        flight_cost = float(request.form.get('flight_cost', 0))
-        transport_cost = float(request.form.get('transport_cost', 0))
-        misc_cost = float(request.form.get('misc_cost', 0))
+        visa_cost = request.form.get('visa_cost', '').strip()
+        hotel_cost = request.form.get('hotel_cost', '').strip()
+        flight_cost = request.form.get('flight_cost', '').strip()
+        transport_cost = request.form.get('transport_cost', '').strip()
+        misc_cost = request.form.get('misc_cost', '').strip()
+        
+        visa_cost = float(visa_cost) if visa_cost else 0
+        hotel_cost = float(hotel_cost) if hotel_cost else 0
+        flight_cost = float(flight_cost) if flight_cost else 0
+        transport_cost = float(transport_cost) if transport_cost else 0
+        misc_cost = float(misc_cost) if misc_cost else 0
+        
         total_cost = visa_cost + hotel_cost + flight_cost + transport_cost + misc_cost
         
         # Calculate balance and profit
         balance_pending = package_price - advance_paid
         profit = package_price - total_cost
+        
+        # Parse dates
+        passport_expiry = request.form.get('passport_expiry', '').strip()
+        date_of_birth = request.form.get('date_of_birth', '').strip()
         
         # Create umrah customer
         umrah_customer = UmrahCustomer(
@@ -4623,8 +4641,8 @@ def add_umrah_customer(batch_id):
             customer_id=int(customer_id) if customer_id else None,
             passenger_name=request.form.get('passenger_name'),
             passport_number=request.form.get('passport_number'),
-            passport_expiry=datetime.strptime(request.form.get('passport_expiry'), '%Y-%m-%d').date() if request.form.get('passport_expiry') else None,
-            date_of_birth=datetime.strptime(request.form.get('date_of_birth'), '%Y-%m-%d').date() if request.form.get('date_of_birth') else None,
+            passport_expiry=datetime.strptime(passport_expiry, '%Y-%m-%d').date() if passport_expiry else None,
+            date_of_birth=datetime.strptime(date_of_birth, '%Y-%m-%d').date() if date_of_birth else None,
             gender=request.form.get('gender'),
             nationality=request.form.get('nationality'),
             package_type=request.form.get('package_type'),
