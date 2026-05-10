@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tahfeel CRM — Umrah Batches</title>
+  <link rel="stylesheet" href="/static/css/tahfeel.css">
+  <link rel="icon" href="/static/img/logo_white.png" type="image/png">
+</head>
+<body>
+  {%- from 'macros.html' import topbar, nav -%}
+  {{ topbar() }}
+  {{ nav('umrah') }}
+  
+  <div class="container">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}{% for cat, msg in messages %}<div class="flash {% if cat == 'error' %}error{% elif cat == 'warning' %}warning{% endif %}">{{ msg }}</div>{% endfor %}{% endif %}
+    {% endwith %}
+
+    <div class="page-head">
+      <div>
+        <div class="page-head-title">🕌 Umrah Batches</div>
+        <div style="font-size:12px;color:#94A3B8;margin-top:2px;">Manage Umrah group batches and track customers</div>
+      </div>
+      <button onclick="document.getElementById('addBatchModal').style.display='flex'" class="btn-primary">+ New Batch</button>
+    </div>
+
+    <!-- Stats Overview -->
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;margin-bottom:20px;">
+      <div class="card-stat" style="background:#F0F9FF;border-color:#BAE6FD;">
+        <div class="cs-left">
+          <div class="cs-label">Total Batches</div>
+          <div class="cs-value">{{ batches|length }}</div>
+        </div>
+        <div class="cs-icon" style="background:#0EA5E9;color:white;">📋</div>
+      </div>
+      
+      <div class="card-stat" style="background:#FEF3C7;border-color:#FCD34D;">
+        <div class="cs-left">
+          <div class="cs-label">Planning</div>
+          <div class="cs-value">{{ batches|selectattr('status','equalto','Planning')|list|length }}</div>
+        </div>
+        <div class="cs-icon" style="background:#F59E0B;color:white;">⏳</div>
+      </div>
+      
+      <div class="card-stat" style="background:#ECFDF5;border-color:#6EE7B7;">
+        <div class="cs-left">
+          <div class="cs-label">Confirmed</div>
+          <div class="cs-value">{{ batches|selectattr('status','equalto','Confirmed')|list|length }}</div>
+        </div>
+        <div class="cs-icon" style="background:#10B981;color:white;">✓</div>
+      </div>
+      
+      <div class="card-stat" style="background:#F5F3FF;border-color:#C4B5FD;">
+        <div class="cs-left">
+          <div class="cs-label">In Progress</div>
+          <div class="cs-value">{{ batches|selectattr('status','equalto','In Progress')|list|length }}</div>
+        </div>
+        <div class="cs-icon" style="background:#8B5CF6;color:white;">✈️</div>
+      </div>
+    </div>
+
+    <!-- Batches List -->
+    {% for batch in batches %}
+    <div class="card" style="margin-bottom:12px;border-left:4px solid {% if batch.status == 'Planning' %}#F59E0B{% elif batch.status == 'Confirmed' %}#10B981{% elif batch.status == 'In Progress' %}#8B5CF6{% elif batch.status == 'Completed' %}#64748B{% else %}#EF4444{% endif %};">
+      <div class="card-body" style="padding:16px;">
+        <div style="display:flex;justify-content:space-between;align-items:start;">
+          <div style="flex:1;">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+              <h3 style="margin:0;color:var(--text-primary);font-size:16px;">{{ batch.batch_number }}</h3>
+              <span style="background:{% if batch.status == 'Planning' %}#FEF3C7{% elif batch.status == 'Confirmed' %}#ECFDF5{% elif batch.status == 'In Progress' %}#F5F3FF{% elif batch.status == 'Completed' %}#F1F5F9{% else %}#FEE2E2{% endif %};color:{% if batch.status == 'Planning' %}#92400E{% elif batch.status == 'Confirmed' %}#065F46{% elif batch.status == 'In Progress' %}#6B21A8{% elif batch.status == 'Completed' %}#475569{% else %}#991B1B{% endif %};padding:4px 10px;border-radius:12px;font-size:11px;font-weight:600;">{{ batch.status }}</span>
+            </div>
+            {% if batch.batch_name %}
+            <div style="font-size:14px;color:#64748B;margin-bottom:8px;">{{ batch.batch_name }}</div>
+            {% endif %}
+            
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-top:12px;">
+              <div style="font-size:12px;">
+                <span style="color:#94A3B8;">📅 Departure:</span>
+                <strong style="color:#0F172A;">{{ batch.departure_date.strftime('%d %b %Y') }}</strong>
+              </div>
+              <div style="font-size:12px;">
+                <span style="color:#94A3B8;">🔙 Return:</span>
+                <strong style="color:#0F172A;">{{ batch.return_date.strftime('%d %b %Y') }}</strong>
+              </div>
+              <div style="font-size:12px;">
+                <span style="color:#94A3B8;">👥 Capacity:</span>
+                <strong style="color:#0F172A;">{{ batch.customers|length }}/{{ batch.total_capacity }}</strong>
+              </div>
+              <div style="font-size:12px;">
+                <span style="color:#94A3B8;">💰 Batch Cost:</span>
+                <strong style="color:#0F172A;">AED {{ '{:,.0f}'.format(batch.total_cost or 0) }}</strong>
+              </div>
+            </div>
+
+            {% if batch.hotel_makkah or batch.hotel_madinah %}
+            <div style="margin-top:10px;padding-top:10px;border-top:1px solid #E2E8F0;font-size:12px;color:#64748B;">
+              {% if batch.hotel_makkah %}🏨 Makkah: {{ batch.hotel_makkah }}{% endif %}
+              {% if batch.hotel_makkah and batch.hotel_madinah %} | {% endif %}
+              {% if batch.hotel_madinah %}🏨 Madinah: {{ batch.hotel_madinah }}{% endif %}
+            </div>
+            {% endif %}
+          </div>
+
+          <div style="display:flex;gap:8px;margin-left:16px;">
+            <a href="/umrah/batch/{{ batch.id }}" class="btn-primary" style="padding:8px 16px;font-size:13px;text-decoration:none;">View Details</a>
+            <button onclick="editBatch({{ batch.id }})" class="ib" title="Edit">✏️</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    {% else %}
+    <div class="card">
+      <div class="card-body" style="text-align:center;padding:60px 20px;color:#94A3B8;">
+        <div style="font-size:48px;margin-bottom:16px;">🕌</div>
+        <div style="font-size:16px;font-weight:600;color:#64748B;margin-bottom:8px;">No Umrah Batches Yet</div>
+        <div style="font-size:13px;margin-bottom:20px;">Create your first Umrah batch to start managing groups</div>
+        <button onclick="document.getElementById('addBatchModal').style.display='flex'" class="btn-primary">+ Create First Batch</button>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <!-- Add Batch Modal -->
+  <div id="addBatchModal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);align-items:center;justify-content:center;z-index:1000;">
+    <div style="background:white;border-radius:12px;width:90%;max-width:600px;max-height:90vh;overflow-y:auto;">
+      <div style="padding:20px;border-bottom:1px solid #E2E8F0;display:flex;justify-content:space-between;align-items:center;">
+        <h2 style="margin:0;font-size:18px;">🕌 Create New Umrah Batch</h2>
+        <button onclick="document.getElementById('addBatchModal').style.display='none'" style="background:none;border:none;font-size:24px;cursor:pointer;color:#94A3B8;">&times;</button>
+      </div>
+      
+      <form method="post" action="/umrah/batch/add" style="padding:20px;">
+        <div class="form-row-2">
+          <div class="form-group">
+            <label>Batch Number <span style="color:#EF4444;">*</span></label>
+            <input type="text" name="batch_number" required placeholder="UMR-2024-MAR-01" pattern="UMR-[0-9]{4}-[A-Z]{3}-[0-9]{2}" title="Format: UMR-2024-MAR-01">
+            <small style="color:#94A3B8;font-size:11px;">Format: UMR-YYYY-MMM-XX</small>
+          </div>
+          <div class="form-group">
+            <label>Batch Name</label>
+            <input type="text" name="batch_name" placeholder="March 2024 Umrah">
+          </div>
+        </div>
+
+        <div class="form-row-2">
+          <div class="form-group">
+            <label>Departure Date <span style="color:#EF4444;">*</span></label>
+            <input type="date" name="departure_date" required>
+          </div>
+          <div class="form-group">
+            <label>Return Date <span style="color:#EF4444;">*</span></label>
+            <input type="date" name="return_date" required>
+          </div>
+        </div>
+
+        <div class="form-row-2">
+          <div class="form-group">
+            <label>Hotel - Makkah</label>
+            <input type="text" name="hotel_makkah" placeholder="e.g., Swissotel Makkah">
+          </div>
+          <div class="form-group">
+            <label>Hotel - Madinah</label>
+            <input type="text" name="hotel_madinah" placeholder="e.g., Pullman Zamzam Madinah">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Flight Details</label>
+          <textarea name="flight_details" rows="2" placeholder="e.g., Emirates EK123 - Dubai to Jeddah"></textarea>
+        </div>
+
+        <div class="form-group">
+          <label>Transport Details</label>
+          <textarea name="transport_details" rows="2" placeholder="e.g., Luxury AC Buses"></textarea>
+        </div>
+
+        <div class="form-row-2">
+          <div class="form-group">
+            <label>Total Capacity (People) <span style="color:#EF4444;">*</span></label>
+            <input type="number" name="total_capacity" required min="1" value="40">
+          </div>
+          <div class="form-group">
+            <label>Total Batch Cost (AED)</label>
+            <input type="number" name="total_cost" min="0" step="0.01" placeholder="0">
+            <small style="color:#94A3B8;font-size:11px;">Total expenses for the batch</small>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Status <span style="color:#EF4444;">*</span></label>
+          <select name="status" required>
+            <option value="Planning" selected>Planning</option>
+            <option value="Confirmed">Confirmed</option>
+            <option value="In Progress">In Progress</option>
+            <option value="Completed">Completed</option>
+            <option value="Cancelled">Cancelled</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Notes</label>
+          <textarea name="notes" rows="3" placeholder="Additional notes about this batch..."></textarea>
+        </div>
+
+        <div style="display:flex;gap:10px;margin-top:20px;">
+          <button type="submit" class="btn-primary" style="flex:1;">Create Batch</button>
+          <button type="button" onclick="document.getElementById('addBatchModal').style.display='none'" style="flex:1;padding:10px;background:#F1F5F9;border:1px solid #CBD5E1;border-radius:6px;cursor:pointer;">Cancel</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    function editBatch(id) {
+      window.location.href = '/umrah/batch/' + id + '/edit';
+    }
+  </script>
+</body>
+</html>
