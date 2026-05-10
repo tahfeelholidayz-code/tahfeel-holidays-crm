@@ -4666,12 +4666,20 @@ def add_umrah_customer():
         emergencies = request.form.getlist('passenger_emergency[]')
         passports = request.form.getlist('passenger_passport[]')
         addresses = request.form.getlist('passenger_address[]')
-        ages = request.form.getlist('passenger_age[]')
         types = request.form.getlist('passenger_type[]')
         genders = request.form.getlist('passenger_gender[]')
         is_primaries = request.form.getlist('is_primary[]')
         
-        # Count adults and children
+        # Age is optional and may not exist for all passengers
+        ages_raw = request.form.getlist('passenger_age[]')
+        ages = []
+        for i in range(len(names)):
+            if i < len(ages_raw) and ages_raw[i]:
+                ages.append(ages_raw[i])
+            else:
+                ages.append(None)
+        
+        # Count adults and children from types
         adults_count = sum(1 for t in types if t == 'Adult')
         children_count = sum(1 for t in types if t == 'Child')
         total_people = len(names)
@@ -4700,22 +4708,24 @@ def add_umrah_customer():
         # Create passengers
         for i in range(len(names)):
             # Handle children with minimal data - use primary's contact info
-            phone = phones[i] if phones[i] and phones[i] != 'Same as primary' else phones[0]
-            emergency = emergencies[i] if emergencies[i] and emergencies[i] != 'Same as primary' else emergencies[0]
-            address = addresses[i] if addresses[i] and addresses[i] != 'Same as primary' else addresses[0]
+            phone = phones[i] if i < len(phones) and phones[i] and phones[i] != 'Same as primary' else (phones[0] if phones else 'N/A')
+            emergency = emergencies[i] if i < len(emergencies) and emergencies[i] and emergencies[i] != 'Same as primary' else (emergencies[0] if emergencies else 'N/A')
+            address = addresses[i] if i < len(addresses) and addresses[i] and addresses[i] != 'Same as primary' else (addresses[0] if addresses else 'N/A')
+            email = emails[i] if i < len(emails) and emails[i] else None
+            age = int(ages[i]) if ages[i] and str(ages[i]).strip() and str(ages[i]).strip().isdigit() else None
             
             passenger = UmrahPassenger(
                 booking_id=booking.id,
                 passenger_name=names[i],
                 phone_number=phone,
-                email=emails[i] if emails[i] else None,
+                email=email,
                 emergency_contact=emergency,
-                passport_number=passports[i],
+                passport_number=passports[i] if i < len(passports) else 'N/A',
                 address=address,
-                age=int(ages[i]) if ages[i] and ages[i].strip() else None,
-                passenger_type=types[i],
-                gender=genders[i],
-                is_primary=bool(int(is_primaries[i]))
+                age=age,
+                passenger_type=types[i] if i < len(types) else 'Adult',
+                gender=genders[i] if i < len(genders) else 'Male',
+                is_primary=bool(int(is_primaries[i])) if i < len(is_primaries) else False
             )
             db.session.add(passenger)
         
