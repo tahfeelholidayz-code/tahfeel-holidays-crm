@@ -265,6 +265,142 @@ class VendorPayment(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.now)
     vendor = db.relationship('Vendor', backref='payments')
 
+# ============================================
+# ACCOUNTING MODELS
+# ============================================
+
+class Invoice(db.Model):
+    """Customer invoices"""
+    id = db.Column(db.Integer, primary_key=True)
+    invoice_number = db.Column(db.String(50), unique=True, nullable=False)
+    customer_id = db.Column(db.Integer, db.ForeignKey('customer.id'))
+    task_id = db.Column(db.Integer, db.ForeignKey('job.id'))  # Optional link
+    invoice_date = db.Column(db.Date, nullable=False)
+    due_date = db.Column(db.Date)
+    total_amount = db.Column(db.Float, default=0)
+    status = db.Column(db.String(20), default='Draft')  # Draft, Sent, Paid, Partially Paid, Cancelled
+    notes = db.Column(db.Text)
+    created_by = db.Column(db.Integer, db.ForeignKey('user.id'))
+    created_at = db.Column(db.DateTime, default=datetime.now)
+    updated_at = db.Column(db.DateTime, default=datetime.now, onupdate=datetime.now)
+    
+    customer = db.relationship('Customer', backref='invoices')
+    items = db.relationship('InvoiceItem', backref='invoice', cascade='all, delete-orphan')
+    receipts = db.relationship('Receipt', backref='invoice')
+
+class InvoiceItem(db.Model):
+    """Line items in invoice"""
+    id = db.Column(db.Integer, primary_key=True)
+    invoice_id = db.Column(db.Integer, db.ForeignKey('invoice.id'), nullable=False)
+    description = db.Column(db.Text, nullable=False)
+    quantity = db.Column(db.Integer, default=1)
+    unit_price = db.Column(db.Float, nullable=False)
+    amount = db.Column(db.Float, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.now)
+
+class Receipt(db.Model):
+    """Customer payment receipts"""
+    id = db.Column(db.Integer, primary_key=True)
+    receipt_number = db.Column(db.String(50), unique=True, nullable=False)
+    customer_id = db.Column(db.Integer, db.ForeignKey('customer.id'))
+    invoice_id = db.Column(db.Integer, db.ForeignKey('invoice.id'))  # Optional link
+    amount = db.Column(db.Float, nullable=False)
+    payment_method = db.Column(db.String(50))  # Cash, Card, Bank Transfer, Cheque
+    payment_date = db.Column(db.Date, nullable=False)
+    reference_number = db.Column(db.String(100))
+    notes = db.Column(db.Text)
+    received_by = db.Column(db.Integer, db.ForeignKey('user.id'))
+    created_at = db.Column(db.DateTime, default=datetime.now)
+    
+    customer = db.relationship('Customer', backref='receipts')
+
+class Expense(db.Model):
+    """All business expenses"""
+    id = db.Column(db.Integer, primary_key=True)
+    expense_number = db.Column(db.String(50), unique=True, nullable=False)
+    category = db.Column(db.String(50), nullable=False)  # Vendor Payment, Office, Salary, Marketing, Other
+    vendor_id = db.Column(db.Integer, db.ForeignKey('vendor.id'))
+    task_id = db.Column(db.Integer, db.ForeignKey('job.id'))  # Optional link
+    umrah_batch_id = db.Column(db.Integer, db.ForeignKey('umrah_batch.id'))  # Optional link
+    description = db.Column(db.Text, nullable=False)
+    amount = db.Column(db.Float, nullable=False)
+    payment_method = db.Column(db.String(50))
+    payment_date = db.Column(db.Date, nullable=False)
+    status = db.Column(db.String(20), default='Paid')  # Pending, Paid
+    receipt_file = db.Column(db.String(255))
+    notes = db.Column(db.Text)
+    paid_by = db.Column(db.Integer, db.ForeignKey('user.id'))
+    created_at = db.Column(db.DateTime, default=datetime.now)
+    
+    vendor = db.relationship('Vendor', backref='expenses')
+
+# ============================================
+# UMRAH MANAGEMENT MODELS
+# ============================================
+
+class UmrahBatch(db.Model):
+    """Umrah group batches"""
+    id = db.Column(db.Integer, primary_key=True)
+    batch_number = db.Column(db.String(50), unique=True, nullable=False)
+    batch_name = db.Column(db.String(200))
+    departure_date = db.Column(db.Date, nullable=False)
+    return_date = db.Column(db.Date, nullable=False)
+    hotel_name = db.Column(db.String(200))
+    hotel_makkah = db.Column(db.String(200))
+    hotel_madinah = db.Column(db.String(200))
+    flight_details = db.Column(db.Text)
+    transport_details = db.Column(db.Text)
+    total_capacity = db.Column(db.Integer, default=0)
+    total_cost = db.Column(db.Float, default=0)
+    status = db.Column(db.String(20), default='Planning')  # Planning, Confirmed, In Progress, Completed, Cancelled
+    notes = db.Column(db.Text)
+    created_by = db.Column(db.Integer, db.ForeignKey('user.id'))
+    created_at = db.Column(db.DateTime, default=datetime.now)
+    updated_at = db.Column(db.DateTime, default=datetime.now, onupdate=datetime.now)
+    
+    customers = db.relationship('UmrahCustomer', backref='batch', cascade='all, delete-orphan')
+    expenses = db.relationship('Expense', backref='umrah_batch')
+
+class UmrahCustomer(db.Model):
+    """Customers in each Umrah batch"""
+    id = db.Column(db.Integer, primary_key=True)
+    batch_id = db.Column(db.Integer, db.ForeignKey('umrah_batch.id'), nullable=False)
+    customer_id = db.Column(db.Integer, db.ForeignKey('customer.id'))
+    task_id = db.Column(db.Integer, db.ForeignKey('job.id'))
+    
+    # Passenger Details
+    passenger_name = db.Column(db.String(200), nullable=False)
+    passport_number = db.Column(db.String(50))
+    passport_expiry = db.Column(db.Date)
+    date_of_birth = db.Column(db.Date)
+    gender = db.Column(db.String(10))
+    nationality = db.Column(db.String(50))
+    
+    # Package & Pricing
+    package_type = db.Column(db.String(50))
+    package_price = db.Column(db.Float, default=0)
+    advance_paid = db.Column(db.Float, default=0)
+    balance_pending = db.Column(db.Float, default=0)
+    
+    # Individual Costs
+    visa_cost = db.Column(db.Float, default=0)
+    hotel_cost = db.Column(db.Float, default=0)
+    flight_cost = db.Column(db.Float, default=0)
+    transport_cost = db.Column(db.Float, default=0)
+    misc_cost = db.Column(db.Float, default=0)
+    total_cost = db.Column(db.Float, default=0)
+    
+    # Calculated
+    profit = db.Column(db.Float, default=0)
+    
+    status = db.Column(db.String(20), default='Registered')
+    notes = db.Column(db.Text)
+    created_at = db.Column(db.DateTime, default=datetime.now)
+    updated_at = db.Column(db.DateTime, default=datetime.now, onupdate=datetime.now)
+    
+    customer = db.relationship('Customer', backref='umrah_bookings')
+
+
 class Job(db.Model):
     __table_args__ = {'extend_existing': True}
     id = db.Column(db.Integer, primary_key=True)
