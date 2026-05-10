@@ -4644,13 +4644,151 @@ def umrah_customers():
                          total_balance=total_balance,
                          not_assigned_count=not_assigned_count)
 
+@app.route('/umrah/customer/add', methods=['GET', 'POST'])
+@login_required
+def add_umrah_customer():
+    """Add new umrah customer booking"""
+    if request.method == 'GET':
+        customers = Customer.query.order_by(Customer.name).all()
+        return render_template('umrah_customer_add.html', customers=customers)
+    
+    try:
+        # Get basic data
+        customer_id = request.form.get('customer_id')
+        adult_price = float(request.form.get('adult_price', 0))
+        child_price = float(request.form.get('child_price', 0))
+        amount_received = float(request.form.get('amount_received', 0))
+        
+        # Get passenger arrays
+        names = request.form.getlist('passenger_name[]')
+        phones = request.form.getlist('passenger_phone[]')
+        emails = request.form.getlist('passenger_email[]')
+        emergencies = request.form.getlist('passenger_emergency[]')
+        passports = request.form.getlist('passenger_passport[]')
+        addresses = request.form.getlist('passenger_address[]')
+        ages = request.form.getlist('passenger_age[]')
+        types = request.form.getlist('passenger_type[]')
+        genders = request.form.getlist('passenger_gender[]')
+        is_primaries = request.form.getlist('is_primary[]')
+        
+        # Count adults and children
+        adults_count = sum(1 for t in types if t == 'Adult')
+        children_count = sum(1 for t in types if t == 'Child')
+        total_people = len(names)
+        
+        # Calculate total package
+        total_package_amount = (adults_count * adult_price) + (children_count * child_price)
+        balance_pending = total_package_amount - amount_received
+        
+        # Create booking
+        booking = UmrahBooking(
+            customer_id=int(customer_id) if customer_id else None,
+            adults_count=adults_count,
+            children_count=children_count,
+            total_people=total_people,
+            adult_price=adult_price,
+            child_price=child_price,
+            total_package_amount=total_package_amount,
+            amount_received=amount_received,
+            balance_pending=balance_pending,
+            status='Not Assigned'
+        )
+        
+        db.session.add(booking)
+        db.session.flush()  # Get booking ID
+        
+        # Create passengers
+        for i in range(len(names)):
+            passenger = UmrahPassenger(
+                booking_id=booking.id,
+                passenger_name=names[i],
+                phone_number=phones[i],
+                email=emails[i] if emails[i] else None,
+                emergency_contact=emergencies[i],
+                passport_number=passports[i],
+                address=addresses[i],
+                age=int(ages[i]) if ages[i] else None,
+                passenger_type=types[i],
+                gender=genders[i],
+                is_primary=bool(int(is_primaries[i]))
+            )
+            db.session.add(passenger)
+        
+        db.session.commit()
+        
+        flash(f'Umrah customer booking created successfully! {total_people} passengers added.')
+        return redirect(url_for('umrah_customer_detail', booking_id=booking.id))
+        
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error creating booking: {str(e)}', 'error')
+        customers = Customer.query.order_by(Customer.name).all()
+        return render_template('umrah_customer_add.html', customers=customers)
+
 @app.route('/umrah/customer/<int:booking_id>')
 @login_required
 def umrah_customer_detail(booking_id):
     """View customer booking details"""
     booking = UmrahBooking.query.get_or_404(booking_id)
     batches = UmrahBatch.query.filter_by(status='Planning').all()  # Available batches
-    return render_template('umrah_customer_detail.html', booking=booking, batches=batches)
+    return render_template('umrah_customer_detail.html', booking=booking, batches=batches, now=datetime.now())
+
+@app.route('/umrah/customer/<int:booking_id>/add-payment', methods=['POST'])
+@login_required
+def add_umrah_payment(booking_id):
+    """Record payment for booking"""
+    booking = UmrahBooking.query.get_or_404(booking_id)
+    
+    try:
+        amount = float(request.form.get('amount', 0))
+        payment_date = datetime.strptime(request.form.get('payment_date'), '%Y-%m-%d').date()
+        
+        payment = UmrahPayment(
+            booking_id=booking_id,
+            amount=amount,
+            payment_date=payment_date,
+            payment_method=request.form.get('payment_method'),
+            notes=request.form.get('notes'),
+            received_by=session['user_id']
+        )
+        
+        # Update booking amounts
+        booking.amount_received += amount
+        booking.balance_pending = booking.total_package_amount - booking.amount_received
+        
+        db.session.add(payment)
+        db.session.commit()
+        
+        flash(f'Payment of AED {amount:,.0f} recorded successfully!')
+        return redirect(url_for('umrah_customer_detail', booking_id=booking_id))
+        
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error: {str(e)}', 'error')
+        return redirect(url_for('umrah_customer_detail', booking_id=booking_id))
+
+@app.route('/umrah/customer/<int:booking_id>/assign-batch', methods=['POST'])
+@login_required
+def assign_to_batch(booking_id):
+    """Assign customer to batch"""
+    booking = UmrahBooking.query.get_or_404(booking_id)
+    
+    try:
+        batch_id = int(request.form.get('batch_id'))
+        batch = UmrahBatch.query.get_or_404(batch_id)
+        
+        booking.batch_id = batch_id
+        booking.status = 'In Batch'
+        
+        db.session.commit()
+        
+        flash(f'Customer assigned to batch {batch.batch_number} successfully!')
+        return redirect(url_for('umrah_customer_detail', booking_id=booking_id))
+        
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error: {str(e)}', 'error')
+        return redirect(url_for('umrah_customer_detail', booking_id=booking_id))
 
 @app.route('/umrah/customer/<int:booking_id>/delete')
 @login_required
