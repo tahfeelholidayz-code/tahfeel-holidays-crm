@@ -96,6 +96,9 @@
           {% if job.vendor_amount and job.vendor_amount > 0 %}
           <div class="card-stat cs-amber"><div class="cs-left"><div class="cs-label">Vendor Due</div><div class="cs-value" style="font-size:16px;">AED {{ '{:,.0f}'.format((job.vendor_amount or 0)-(job.vendor_paid or 0)) }}</div></div><div class="cs-icon cs-amber">🏢</div></div>
           {% endif %}
+          {% if job.revenue_amount and job.revenue_amount > 0 %}
+          <div class="card-stat" style="background:#FEF3C7;border-color:#FCD34D;"><div class="cs-left"><div class="cs-label">Revenue</div><div class="cs-value" style="font-size:16px;color:#92400E;">AED {{ '{:,.0f}'.format(job.revenue_amount or 0) }}</div></div><div class="cs-icon" style="background:#F59E0B;color:white;">📈</div></div>
+          {% endif %}
         </div>
 
         <!-- Completion Summary -->
@@ -135,113 +138,103 @@
     <!-- Close Task Form (Finance/Admin only when Done) -->
     {% if job.status == 'Done' and session.role in ['finance','admin'] %}
         <form method="post" action="/jobs/{{ job.id }}/close" id="closeTaskForm">
-          <div style="background:#F0F9FF;border:1px solid #BAE6FD;border-radius:var(--radius-sm);padding:12px;margin-bottom:14px;">
-            <div style="font-size:11px;font-weight:700;color:#0369A1;text-transform:uppercase;margin-bottom:8px;">Customer Payment</div>
+          
+          <!-- Customer Payment Summary -->
+          <div style="background:#F0F9FF;border:1px solid #BAE6FD;border-radius:var(--radius-sm);padding:14px;margin-bottom:14px;">
+            <div style="font-size:11px;font-weight:700;color:#0369A1;text-transform:uppercase;margin-bottom:10px;">💰 Customer Payment Summary</div>
             <div class="form-row-2">
-              <div class="form-group"><label>Final Invoice Amount (AED)</label><input type="number" name="amount_invoiced" value="{{ job.amount_invoiced or '' }}" min="0" step="0.01"></div>
-              <div class="form-group"><label>Total Received (AED)</label><input type="number" name="amount_received" value="{{ job.amount_received or '' }}" min="0" step="0.01"></div>
+              <div class="form-group">
+                <label>Total Invoice Amount (AED)</label>
+                <input type="number" name="amount_invoiced" value="{{ job.amount_invoiced or '' }}" min="0" step="0.01" required>
+              </div>
+              <div class="form-group">
+                <label>Total Amount Received (AED)</label>
+                <input type="number" name="amount_received" id="amountReceived" value="{{ job.amount_received or '' }}" min="0" step="0.01" required>
+              </div>
             </div>
             {% set balance = (job.amount_invoiced or 0) - (job.amount_received or 0) %}
             {% if balance > 0 %}
-            <div style="background:#FEF2F2;border:1px solid #FCA5A5;border-radius:var(--radius-sm);padding:8px 12px;font-size:12px;color:#991B1B;font-weight:600;margin-top:8px;">
-              ⚠ Outstanding customer balance: AED {{ '{:,.0f}'.format(balance) }}
+            <div style="background:#FEF2F2;border:1px solid#FCA5A5;border-radius:4px;padding:8px 12px;font-size:12px;color:#991B1B;font-weight:600;margin-top:8px;">
+              ⚠ Outstanding Balance: AED {{ '{:,.0f}'.format(balance) }}
+            </div>
+            {% elif balance == 0 %}
+            <div style="background:#ECFDF5;border:1px solid #6EE7B7;border-radius:4px;padding:8px 12px;font-size:12px;color:#065F46;font-weight:600;margin-top:8px;">
+              ✓ Fully Paid
             </div>
             {% endif %}
           </div>
 
-          <div style="background:#F9F5FF;border:1px solid #E9D5FF;border-radius:var(--radius-sm);padding:12px;margin-bottom:14px;">
-            <div style="font-size:11px;font-weight:700;color:#6B21A8;text-transform:uppercase;margin-bottom:8px;">Revenue & Partner Commission</div>
-            <div class="form-group">
-              <label style="font-weight:600;">Partner Commission Expected? <span style="color:#EF4444;">*</span></label>
-              <select name="partner_commission_expected" id="partnerCommissionSelect" required style="width:100%;">
-                <option value="">— Select —</option>
-                <option value="no">No - Regular task (enter revenue now)</option>
-                <option value="yes">Yes - Partner will pay commission later</option>
-              </select>
-            </div>
-
-            <div id="regularRevenueFields" style="display:none;">
+          <!-- Revenue Recognition (REQUIRED) -->
+          <div style="background:#FEF3C7;border:1px solid #FCD34D;border-radius:var(--radius-sm);padding:14px;margin-bottom:14px;">
+            <div style="font-size:11px;font-weight:700;color:#92400E;text-transform:uppercase;margin-bottom:10px;">📈 Revenue Recognition (Required)</div>
+            <div class="form-row-2">
               <div class="form-group">
-                <label>Revenue/Profit (AED) <span style="color:#EF4444;font-weight:700;">* REQUIRED</span></label>
-                <input type="number" name="revenue" id="revenueInput" min="0" step="0.01" placeholder="Enter profit amount">
-                <small style="color:#059669;display:block;margin-top:4px;">✓ Revenue will be counted immediately when task closes</small>
+                <label>Revenue Amount (AED) <span style="color:#DC2626;">*</span></label>
+                <input type="number" name="revenue_amount" id="revenueAmount" min="0" step="0.01" required placeholder="Actual profit/revenue">
+                <small style="color:#78716C;font-size:11px;margin-top:4px;display:block;">💡 Suggested: Invoice - Vendor Cost = Revenue</small>
               </div>
-            </div>
-
-            <div id="partnerCommissionFields" style="display:none;">
               <div class="form-group">
-                <label>Partner Name <span style="color:#EF4444;">*</span></label>
-                <select name="partner_name" id="partnerNameSelect" style="width:100%;">
-                  <option value="">— Select Partner —</option>
-                  {% for partner in partners %}
-                  <option value="{{ partner.name }}">{{ partner.name }}</option>
-                  {% endfor %}
-                  <option value="__ADD_NEW__">+ Add New Partner</option>
-                </select>
-              </div>
-              <div class="form-group" id="newPartnerField" style="display:none;">
-                <label>New Partner Name</label>
-                <input type="text" name="new_partner_name" id="newPartnerInput" placeholder="Enter partner name">
-              </div>
-              <div class="form-row-2">
-                <div class="form-group">
-                  <label>Commission Amount (AED) <span style="color:#EF4444;">*</span></label>
-                  <input type="number" name="partner_amount" id="partnerAmount" min="0" step="0.01" placeholder="e.g. 1500">
-                </div>
-                <div class="form-group">
-                  <label>Expected Payment Date <span style="color:#EF4444;">*</span></label>
-                  <input type="date" name="partner_due_date" id="partnerDueDate">
-                </div>
-              </div>
-              <div style="background:#FEF3C7;border:1px solid #FCD34D;border-radius:var(--radius-sm);padding:8px 12px;font-size:12px;color:#92400E;margin-top:8px;">
-                ℹ Revenue will be AED 0 until partner commission is marked as received
+                <label>Revenue Date <span style="color:#DC2626;">*</span></label>
+                <input type="date" name="revenue_date" id="revenueDate" required>
               </div>
             </div>
+            {% if job.vendor_amount and job.vendor_amount > 0 %}
+            <div style="background:#fff;border:1px solid #D4D4D8;border-radius:4px;padding:8px 12px;font-size:12px;margin-top:8px;">
+              <div style="color:#52525B;"><strong>Calculation Helper:</strong></div>
+              <div style="color:#18181B;margin-top:4px;">
+                Customer Invoice: AED {{ '{:,.0f}'.format(job.amount_invoiced or 0) }}<br>
+                Vendor Cost: AED {{ '{:,.0f}'.format(job.vendor_amount or 0) }}<br>
+                <span style="border-top:1px solid #E4E4E7;display:block;margin:4px 0;"></span>
+                <strong>Net Revenue: AED {{ '{:,.0f}'.format((job.amount_invoiced or 0) - (job.vendor_amount or 0)) }}</strong>
+              </div>
+            </div>
+            {% endif %}
           </div>
 
-          <div class="form-group"><label>Finance Closing Notes (optional)</label><input type="text" name="finance_notes" maxlength="30" placeholder="Max 30 characters..."></div>
-          <button type="submit" class="btn-primary">Close Task (Final)</button>
+          <!-- Vendor Payment (if applicable) -->
+          {% if job.vendor_id %}
+          <div style="background:#F5F3FF;border:1px solid #C4B5FD;border-radius:var(--radius-sm);padding:14px;margin-bottom:14px;">
+            <div style="font-size:11px;font-weight:700;color:#6B21A8;text-transform:uppercase;margin-bottom:10px;">🏢 Vendor Payment Status</div>
+            <div style="font-size:13px;color:#3F3F46;margin-bottom:10px;">
+              <strong>Vendor:</strong> {{ job.vendor.name if job.vendor else 'N/A' }}<br>
+              <strong>Amount Due:</strong> AED {{ '{:,.0f}'.format(job.vendor_amount or 0) }}
+            </div>
+            <div class="form-row-2">
+              <div class="form-group">
+                <label>Amount Paid to Vendor (AED)</label>
+                <input type="number" name="vendor_paid" value="{{ job.vendor_paid or 0 }}" min="0" step="0.01">
+              </div>
+              <div class="form-group">
+                <label>Payment Date</label>
+                <input type="date" name="vendor_payment_date">
+              </div>
+            </div>
+            {% if job.vendor_paid and job.vendor_paid >= job.vendor_amount %}
+            <div style="background:#ECFDF5;border:1px solid #6EE7B7;border-radius:4px;padding:8px 12px;font-size:12px;color:#065F46;font-weight:600;margin-top:8px;">
+              ✓ Vendor Fully Paid
+            </div>
+            {% endif %}
+          </div>
+          {% endif %}
+
+          <!-- Final Remarks -->
+          <div class="form-group">
+            <label>Final Remarks (optional)</label>
+            <textarea name="finance_notes" rows="2" placeholder="Task completion notes..."></textarea>
+          </div>
+
+          <button type="submit" class="btn-primary" style="width:100%;padding:12px;font-size:14px;font-weight:600;">
+            ✓ Mark as Done & Record Revenue
+          </button>
         </form>
 
         <script>
-        const partnerSelect = document.getElementById('partnerCommissionSelect');
-        const regularFields = document.getElementById('regularRevenueFields');
-        const partnerFields = document.getElementById('partnerCommissionFields');
-        const revenueInput = document.getElementById('revenueInput');
-        const partnerNameSelect = document.getElementById('partnerNameSelect');
-        const partnerAmount = document.getElementById('partnerAmount');
-        const partnerDueDate = document.getElementById('partnerDueDate');
-        const newPartnerField = document.getElementById('newPartnerField');
-        const newPartnerInput = document.getElementById('newPartnerInput');
-
-        partnerSelect.addEventListener('change', function() {
-          if (this.value === 'no') {
-            regularFields.style.display = 'block';
-            partnerFields.style.display = 'none';
-            revenueInput.required = true;
-            partnerNameSelect.required = false;
-            partnerAmount.required = false;
-            partnerDueDate.required = false;
-          } else if (this.value === 'yes') {
-            regularFields.style.display = 'none';
-            partnerFields.style.display = 'block';
-            revenueInput.required = false;
-            partnerNameSelect.required = true;
-            partnerAmount.required = true;
-            partnerDueDate.required = true;
-          } else {
-            regularFields.style.display = 'none';
-            partnerFields.style.display = 'none';
-          }
-        });
-
-        partnerNameSelect.addEventListener('change', function() {
-          if (this.value === '__ADD_NEW__') {
-            newPartnerField.style.display = 'block';
-            newPartnerInput.required = true;
-          } else {
-            newPartnerField.style.display = 'none';
-            newPartnerInput.required = false;
+        // Auto-fill today's date for revenue
+        document.addEventListener('DOMContentLoaded', function() {
+          const today = new Date().toISOString().split('T')[0];
+          const revenueDateField = document.getElementById('revenueDate');
+          if (revenueDateField && !revenueDateField.value) {
+            revenueDateField.value = today;
           }
         });
         </script>
