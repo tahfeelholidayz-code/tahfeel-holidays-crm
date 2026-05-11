@@ -21,7 +21,12 @@
       <a href="/umrah/customers" style="color:#0EA5E9;text-decoration:none;font-size:13px;">← Back to Umrah Customers</a>
     </div>
 
-    {% set primary = booking.passengers|selectattr('is_primary')|first %}
+    {% set primary = None %}
+    {% for p in booking.passengers %}
+      {% if p.is_primary %}
+        {% set primary = p %}
+      {% endif %}
+    {% endfor %}
 
     <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:20px;">
       <div>

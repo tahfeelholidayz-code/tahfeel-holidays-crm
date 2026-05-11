@@ -144,7 +144,10 @@
           </thead>
           <tbody>
             {% for booking in batch.bookings %}
-            {% set primary = booking.passengers|selectattr('is_primary')|first %}
+            {% set primary = None %}
+            {% for p in booking.passengers %}
+              {% if p.is_primary %}{% set primary = p %}{% endif %}
+            {% endfor %}
             <tr>
               <td>
                 <div style="font-weight:600;">{{ primary.passenger_name if primary else 'N/A' }}</div>
