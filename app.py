@@ -5164,6 +5164,17 @@ def toggle_vendor_active(vendor_id):
     return redirect(url_for('vendors'))
 
 # ══════════════════════════════════════════════════════════════════════════════
+# VISA MANAGEMENT
+# ══════════════════════════════════════════════════════════════════════════════
+
+@app.route('/visa-management')
+@login_required
+def visa_management():
+    """Visa Management - Track visa expiries (Coming Soon)"""
+    flash('Visa Management feature is under development. Will be available in the next update!', 'warning')
+    return redirect(url_for('dashboard'))
+
+# ══════════════════════════════════════════════════════════════════════════════
 # TEMPORARY ADMIN ROUTE - Fix April 30 Revenue Dates
 # ══════════════════════════════════════════════════════════════════════════════
 # ══════════════════════════════════════════════════════════════════════════════
