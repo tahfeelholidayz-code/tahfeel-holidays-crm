@@ -88,16 +88,20 @@
           </div>
         </div>
 
-        <!-- Financial Summary -->
-        <div class="fin-row">
-          <div class="card-stat cs-blue"><div class="cs-left"><div class="cs-label">Invoiced</div><div class="cs-value" style="font-size:16px;">AED {{ '{:,.0f}'.format(job.amount_invoiced or 0) }}</div></div><div class="cs-icon cs-blue">📊</div></div>
-          <div class="card-stat cs-green"><div class="cs-left"><div class="cs-label">Received</div><div class="cs-value" style="font-size:16px;">AED {{ '{:,.0f}'.format(job.amount_received or 0) }}</div></div><div class="cs-icon cs-green">✓</div></div>
-          <div class="card-stat cs-red"><div class="cs-left"><div class="cs-label">Pending</div><div class="cs-value" style="font-size:16px;">AED {{ '{:,.0f}'.format((job.amount_invoiced or 0)-(job.amount_received or 0)) }}</div></div><div class="cs-icon cs-red">⚠</div></div>
+        <!-- Financial Summary - Compact Single Row -->
+        <div class="fin-row" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;">
+          <div class="card-stat cs-blue" style="padding:10px 14px;"><div style="display:flex;align-items:center;justify-content:space-between;"><div><div class="cs-label" style="font-size:10px;margin-bottom:2px;">Invoiced</div><div class="cs-value" style="font-size:15px;font-weight:700;">AED {{ '{:,.0f}'.format(job.amount_invoiced or 0) }}</div></div><div class="cs-icon cs-blue" style="width:32px;height:32px;font-size:16px;">📊</div></div></div>
+          
+          <div class="card-stat cs-green" style="padding:10px 14px;"><div style="display:flex;align-items:center;justify-content:space-between;"><div><div class="cs-label" style="font-size:10px;margin-bottom:2px;">Received</div><div class="cs-value" style="font-size:15px;font-weight:700;">AED {{ '{:,.0f}'.format(job.amount_received or 0) }}</div></div><div class="cs-icon cs-green" style="width:32px;height:32px;font-size:16px;">✓</div></div></div>
+          
+          <div class="card-stat cs-red" style="padding:10px 14px;"><div style="display:flex;align-items:center;justify-content:space-between;"><div><div class="cs-label" style="font-size:10px;margin-bottom:2px;">Pending</div><div class="cs-value" style="font-size:15px;font-weight:700;">AED {{ '{:,.0f}'.format((job.amount_invoiced or 0)-(job.amount_received or 0)) }}</div></div><div class="cs-icon cs-red" style="width:32px;height:32px;font-size:16px;">⚠</div></div></div>
+          
           {% if job.vendor_amount and job.vendor_amount > 0 %}
-          <div class="card-stat cs-amber"><div class="cs-left"><div class="cs-label">Vendor Due</div><div class="cs-value" style="font-size:16px;">AED {{ '{:,.0f}'.format((job.vendor_amount or 0)-(job.vendor_paid or 0)) }}</div></div><div class="cs-icon cs-amber">🏢</div></div>
+          <div class="card-stat cs-amber" style="padding:10px 14px;"><div style="display:flex;align-items:center;justify-content:space-between;"><div><div class="cs-label" style="font-size:10px;margin-bottom:2px;">Vendor Due</div><div class="cs-value" style="font-size:15px;font-weight:700;">AED {{ '{:,.0f}'.format((job.vendor_amount or 0)-(job.vendor_paid or 0)) }}</div></div><div class="cs-icon cs-amber" style="width:32px;height:32px;font-size:16px;">🏢</div></div></div>
           {% endif %}
+          
           {% if job.revenue_amount and job.revenue_amount > 0 %}
-          <div class="card-stat" style="background:#FEF3C7;border-color:#FCD34D;"><div class="cs-left"><div class="cs-label">Revenue</div><div class="cs-value" style="font-size:16px;color:#92400E;">AED {{ '{:,.0f}'.format(job.revenue_amount or 0) }}</div></div><div class="cs-icon" style="background:#F59E0B;color:white;">📈</div></div>
+          <div class="card-stat" style="background:#FEF3C7;border-color:#FCD34D;padding:10px 14px;"><div style="display:flex;align-items:center;justify-content:space-between;"><div><div class="cs-label" style="font-size:10px;margin-bottom:2px;">Revenue</div><div class="cs-value" style="font-size:15px;font-weight:700;color:#92400E;">AED {{ '{:,.0f}'.format(job.revenue_amount or 0) }}</div></div><div class="cs-icon" style="background:#F59E0B;color:white;width:32px;height:32px;font-size:16px;">📈</div></div></div>
           {% endif %}
         </div>
 
