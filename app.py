@@ -4653,11 +4653,15 @@ def add_umrah_customer():
         return render_template('umrah_customer_add.html', customers=customers)
     
     try:
-        # Get basic data
+        # Get basic data - handle empty strings
         customer_id = request.form.get('customer_id')
-        adult_price = float(request.form.get('adult_price', 0))
-        child_price = float(request.form.get('child_price', 0))
-        amount_received = float(request.form.get('amount_received', 0))
+        adult_price_str = request.form.get('adult_price', '0').strip()
+        child_price_str = request.form.get('child_price', '0').strip()
+        amount_received_str = request.form.get('amount_received', '0').strip()
+        
+        adult_price = float(adult_price_str) if adult_price_str else 0
+        child_price = float(child_price_str) if child_price_str else 0
+        amount_received = float(amount_received_str) if amount_received_str else 0
         
         # Get passenger arrays
         names = request.form.getlist('passenger_name[]')
