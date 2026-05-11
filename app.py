@@ -4712,7 +4712,10 @@ def add_umrah_customer():
             emergency = emergencies[i] if i < len(emergencies) and emergencies[i] and emergencies[i] != 'Same as primary' else (emergencies[0] if emergencies else 'N/A')
             address = addresses[i] if i < len(addresses) and addresses[i] and addresses[i] != 'Same as primary' else (addresses[0] if addresses else 'N/A')
             email = emails[i] if i < len(emails) and emails[i] else None
-            age = int(ages[i]) if ages[i] and str(ages[i]).strip() and str(ages[i]).strip().isdigit() else None
+            
+            # Safe age handling
+            age_val = ages[i] if i < len(ages) and ages[i] else None
+            age = int(age_val) if age_val and str(age_val).strip() and str(age_val).strip().isdigit() else None
             
             passenger = UmrahPassenger(
                 booking_id=booking.id,
