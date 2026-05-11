@@ -4892,7 +4892,12 @@ def umrah_batches_list():
     
     own_count = sum(1 for b in batches if b.batch_type == 'Own Trip')
     third_party_count = sum(1 for b in batches if b.batch_type == 'Third Party')
-    total_people = sum(b.bookings|sum(attribute='total_people') for b in batches if b.bookings)
+    
+    # Calculate total people correctly
+    total_people = 0
+    for batch in batches:
+        if batch.bookings:
+            total_people += sum(booking.total_people for booking in batch.bookings)
     
     return render_template('umrah_batches_list.html',
                          batches=batches,
