@@ -39,14 +39,18 @@
               <th>Total Paid</th>
               <th>Pending</th>
               <th>Tasks</th>
+              <th>Status</th>
               <th>Actions</th>
             </tr>
           </thead>
           <tbody>
             {% for vendor in vendors %}
-            <tr>
+            <tr style="{% if not vendor.active %}opacity:0.6;background:#F9FAFB;{% endif %}">
               <td>
-                <div style="font-weight:600;color:var(--text-primary);">{{ vendor.name }}</div>
+                <div style="font-weight:600;color:var(--text-primary);">
+                  {{ vendor.name }}
+                  {% if not vendor.active %}<span style="font-size:10px;color:#DC2626;margin-left:4px;">●</span>{% endif %}
+                </div>
                 {% if vendor.company %}<div style="font-size:11px;color:var(--text-muted);">{{ vendor.company }}</div>{% endif %}
               </td>
               <td>{{ vendor.service_type or '—' }}</td>
@@ -77,17 +81,29 @@
                 <div style="font-size:10px;color:#94A3B8;">tasks</div>
                 {% endif %}
               </td>
+              <td style="text-align:center;">
+                {% if vendor.active %}
+                <span style="display:inline-block;padding:3px 8px;background:#D1FAE5;color:#065F46;border-radius:12px;font-size:10px;font-weight:600;">Active</span>
+                {% else %}
+                <span style="display:inline-block;padding:3px 8px;background:#FEE2E2;color:#991B1B;border-radius:12px;font-size:10px;font-weight:600;">Inactive</span>
+                {% endif %}
+              </td>
               <td>
                 <div style="display:flex;gap:5px;">
                   {% if session.role == 'admin' %}
-                  <button onclick="editVendor({{ vendor.id }})" class="ib" title="Edit">✏</button>
-                  <a href="/vendors/{{ vendor.id }}/delete" class="ib ib-del" onclick="return confirm('Deactivate {{ vendor.name }}?')" title="Delete">🗑</a>
+                  {% if vendor.active %}
+                  <button onclick="editVendor({{ vendor.id }})" class="ib" title="Edit">✏️</button>
+                  <a href="/vendors/{{ vendor.id }}/toggle-active" class="ib" style="background:#FEE2E2;color:#991B1B;" onclick="return confirm('Deactivate {{ vendor.name }}? No new transactions will be allowed.')" title="Deactivate">🔒</a>
+                  {% else %}
+                  <button onclick="editVendor({{ vendor.id }})" class="ib" title="View Details" style="opacity:0.7;">👁️</button>
+                  <a href="/vendors/{{ vendor.id }}/toggle-active" class="ib" style="background:#D1FAE5;color:#065F46;" onclick="return confirm('Reactivate {{ vendor.name }}?')" title="Activate">✓</a>
+                  {% endif %}
                   {% endif %}
                 </div>
               </td>
             </tr>
             {% else %}
-            <tr><td colspan="8" style="text-align:center;padding:40px;color:var(--text-muted);">No vendors yet</td></tr>
+            <tr><td colspan="9" style="text-align:center;padding:40px;color:var(--text-muted);">No vendors yet</td></tr>
             {% endfor %}
           </tbody>
         </table>

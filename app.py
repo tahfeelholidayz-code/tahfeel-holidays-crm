@@ -5150,6 +5150,19 @@ def delete_vendor(vendor_id):
     flash(f'Vendor {vendor.name} deactivated')
     return redirect(url_for('vendors'))
 
+@app.route('/vendors/<int:vendor_id>/toggle-active')
+@login_required
+@admin_required
+def toggle_vendor_active(vendor_id):
+    """Toggle vendor active status"""
+    vendor = Vendor.query.get_or_404(vendor_id)
+    vendor.active = not vendor.active
+    db.session.commit()
+    
+    status = "activated" if vendor.active else "deactivated"
+    flash(f'Vendor {vendor.name} {status}')
+    return redirect(url_for('vendors'))
+
 # ══════════════════════════════════════════════════════════════════════════════
 # TEMPORARY ADMIN ROUTE - Fix April 30 Revenue Dates
 # ══════════════════════════════════════════════════════════════════════════════
