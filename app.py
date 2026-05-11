@@ -4738,11 +4738,14 @@ def add_umrah_customer():
         
         db.session.commit()
         
+        # Get the booking ID before closing session
+        booking_id = booking.id
+        
         # Close and clear the session to prevent transaction errors
         db.session.close()
         
         flash(f'Umrah customer booking created successfully! {total_people} passengers added.')
-        return redirect(url_for('umrah_customer_detail', booking_id=booking.id))
+        return redirect(url_for('umrah_customer_detail', booking_id=booking_id))
         
     except Exception as e:
         db.session.rollback()
