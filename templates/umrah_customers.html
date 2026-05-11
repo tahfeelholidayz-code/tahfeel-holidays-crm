@@ -137,6 +137,7 @@
               <td>
                 <div style="display:flex;gap:5px;">
                   <a href="/umrah/customer/{{ booking.id }}" class="ib" title="View Details">👁️</a>
+                  <a href="/umrah/customer/{{ booking.id }}/edit" class="ib" title="Edit">✏️</a>
                   {% set primary = None %}
                   {% for p in booking.passengers %}
                     {% if p.is_primary %}{% set primary = p %}{% endif %}

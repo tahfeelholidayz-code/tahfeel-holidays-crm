@@ -4823,6 +4823,13 @@ def umrah_customer_detail(booking_id):
         flash(f'Error loading customer details: {str(e)}', 'error')
         return redirect(url_for('umrah_customers'))
 
+@app.route('/umrah/customer/<int:booking_id>/edit')
+@login_required
+def edit_umrah_customer(booking_id):
+    """Edit customer (redirects to detail page for now)"""
+    flash('Edit feature coming soon! Use the detail page to manage payments and batch assignment.', 'warning')
+    return redirect(url_for('umrah_customer_detail', booking_id=booking_id))
+
 @app.route('/umrah/customer/<int:booking_id>/add-payment', methods=['POST'])
 @login_required
 def add_umrah_payment(booking_id):
