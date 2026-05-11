@@ -4749,7 +4749,13 @@ def umrah_customer_detail(booking_id):
     """View customer booking details"""
     try:
         booking = UmrahBooking.query.get_or_404(booking_id)
-        batches = UmrahBatch.query.filter_by(status='Planning').all()
+        
+        # Try to load batches, but don't fail if there's an error
+        batches = []
+        try:
+            batches = UmrahBatch.query.filter_by(status='Planning').all()
+        except Exception as batch_error:
+            print(f"Warning: Could not load batches: {batch_error}")
         
         # Ensure passengers are loaded
         if not booking.passengers:
