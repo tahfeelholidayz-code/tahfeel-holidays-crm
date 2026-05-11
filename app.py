@@ -4747,9 +4747,18 @@ def add_umrah_customer():
 @login_required
 def umrah_customer_detail(booking_id):
     """View customer booking details"""
-    booking = UmrahBooking.query.get_or_404(booking_id)
-    batches = UmrahBatch.query.filter_by(status='Planning').all()  # Available batches
-    return render_template('umrah_customer_detail.html', booking=booking, batches=batches, now=datetime.now())
+    try:
+        booking = UmrahBooking.query.get_or_404(booking_id)
+        batches = UmrahBatch.query.filter_by(status='Planning').all()
+        
+        # Ensure passengers are loaded
+        if not booking.passengers:
+            flash('No passengers found for this booking', 'warning')
+        
+        return render_template('umrah_customer_detail.html', booking=booking, batches=batches, now=datetime.now())
+    except Exception as e:
+        flash(f'Error loading customer details: {str(e)}', 'error')
+        return redirect(url_for('umrah_customers'))
 
 @app.route('/umrah/customer/<int:booking_id>/add-payment', methods=['POST'])
 @login_required
