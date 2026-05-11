@@ -771,13 +771,30 @@ def apply_lead_filters(leads, args, now):
     return leads
 
 # ============================================
-# SESSION CLEANUP HANDLER
+# SESSION CLEANUP HANDLERS
 # ============================================
 @app.before_request
 def clear_session_state():
     """Clear any failed transactions before each request"""
     try:
         db.session.rollback()
+    except:
+        pass
+
+@app.after_request
+def cleanup_session(response):
+    """Cleanup session after each request"""
+    try:
+        db.session.remove()
+    except:
+        pass
+    return response
+
+@app.teardown_appcontext
+def shutdown_session(exception=None):
+    """Remove session at the end of request"""
+    try:
+        db.session.remove()
     except:
         pass
 
