@@ -22,9 +22,15 @@
         <div class="page-head-title">🕌 Umrah Customers</div>
         <div style="font-size:12px;color:#94A3B8;margin-top:2px;">Manage Umrah bookings and passengers</div>
       </div>
-      <div style="display:flex;gap:10px;">
-        <a href="/umrah/batches-list" class="btn-primary" style="text-decoration:none;background:#8B5CF6;">📦 Batch Management</a>
-        <a href="/umrah/customer/add" class="btn-primary" style="text-decoration:none;">+ Add Customer</a>
+      <div style="display:flex;gap:12px;">
+        <a href="/umrah/batches-list" style="display:inline-flex;align-items:center;gap:8px;padding:10px 20px;background:#8B5CF6;color:white;border-radius:8px;text-decoration:none;font-weight:600;font-size:14px;transition:all 0.2s;">
+          <span>📦</span>
+          <span>Batch Management</span>
+        </a>
+        <a href="/umrah/customer/add" style="display:inline-flex;align-items:center;gap:8px;padding:10px 20px;background:#0EA5E9;color:white;border-radius:8px;text-decoration:none;font-weight:600;font-size:14px;transition:all 0.2s;">
+          <span>+</span>
+          <span>Add Customer</span>
+        </a>
       </div>
     </div>
 
@@ -130,8 +136,14 @@
               </td>
               <td>
                 <div style="display:flex;gap:5px;">
-                  <a href="/umrah/customer/{{ booking.id }}" class="ib" title="View">👁️</a>
-                  <a href="/umrah/customer/{{ booking.id }}/edit" class="ib" title="Edit">✏️</a>
+                  <a href="/umrah/customer/{{ booking.id }}" class="ib" title="View Details">👁️</a>
+                  {% set primary = None %}
+                  {% for p in booking.passengers %}
+                    {% if p.is_primary %}{% set primary = p %}{% endif %}
+                  {% endfor %}
+                  {% if primary and primary.phone_number %}
+                  <a href="https://wa.me/{{ primary.phone_number.replace('+', '').replace(' ', '') }}" target="_blank" class="ib" style="background:#25D366;color:white;" title="WhatsApp">💬</a>
+                  {% endif %}
                   <a href="/umrah/customer/{{ booking.id }}/delete" class="ib ib-del" onclick="return confirm('Delete this booking and all passengers?')" title="Delete">🗑️</a>
                 </div>
               </td>
