@@ -4738,6 +4738,9 @@ def add_umrah_customer():
         
         db.session.commit()
         
+        # Close and clear the session to prevent transaction errors
+        db.session.close()
+        
         flash(f'Umrah customer booking created successfully! {total_people} passengers added.')
         return redirect(url_for('umrah_customer_detail', booking_id=booking.id))
         
@@ -4752,8 +4755,8 @@ def add_umrah_customer():
 def umrah_customer_detail(booking_id):
     """View customer booking details"""
     try:
-        # Rollback any existing transaction first
-        db.session.rollback()
+        # Clear any stale session state
+        db.session.remove()
         
         booking = UmrahBooking.query.get_or_404(booking_id)
         
@@ -4773,7 +4776,7 @@ def umrah_customer_detail(booking_id):
         
         return render_template('umrah_customer_detail.html', booking=booking, batches=batches, now=datetime.now())
     except Exception as e:
-        db.session.rollback()
+        db.session.remove()
         flash(f'Error loading customer details: {str(e)}', 'error')
         return redirect(url_for('umrah_customers'))
 
