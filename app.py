@@ -770,6 +770,21 @@ def apply_lead_filters(leads, args, now):
     
     return leads
 
+# ============================================
+# SESSION CLEANUP HANDLER
+# ============================================
+@app.before_request
+def clear_session_state():
+    """Clear any failed transactions before each request"""
+    try:
+        db.session.rollback()
+    except:
+        pass
+
+# ============================================
+# ROUTES
+# ============================================
+
 @app.route('/')
 def index():
     return redirect(url_for('login'))
@@ -4758,28 +4773,21 @@ def add_umrah_customer():
 def umrah_customer_detail(booking_id):
     """View customer booking details"""
     try:
-        # Clear any stale session state
-        db.session.remove()
-        
         booking = UmrahBooking.query.get_or_404(booking_id)
-        
-        # Force load passengers in this query
         passengers = UmrahPassenger.query.filter_by(booking_id=booking_id).all()
         
-        # Try to load batches, but don't fail if there's an error
+        # Try to load batches
         batches = []
         try:
             batches = UmrahBatch.query.filter_by(status='Planning').all()
         except Exception as batch_error:
             print(f"Warning: Could not load batches: {batch_error}")
         
-        # Ensure passengers are loaded
         if not passengers:
             flash('No passengers found for this booking', 'warning')
         
         return render_template('umrah_customer_detail.html', booking=booking, batches=batches, now=datetime.now())
     except Exception as e:
-        db.session.remove()
         flash(f'Error loading customer details: {str(e)}', 'error')
         return redirect(url_for('umrah_customers'))
 
