@@ -27,6 +27,8 @@
       font-size: 13px;
       font-weight: 500;
       transition: all 0.2s;
+      text-decoration: none;
+      color: #475569;
     }
     .filter-btn:hover {
       border-color: #0EA5E9;
@@ -36,6 +38,109 @@
       background: #0EA5E9;
       color: white;
       border-color: #0EA5E9;
+    }
+    
+    /* Modern Modal Styling */
+    .modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.5);
+      backdrop-filter: blur(4px);
+      z-index: 9999;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .modal-content {
+      background: white;
+      border-radius: 16px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      max-width: 600px;
+      width: 100%;
+      max-height: 90vh;
+      overflow-y: auto;
+      animation: modalSlideIn 0.3s ease-out;
+    }
+    @keyframes modalSlideIn {
+      from {
+        opacity: 0;
+        transform: translateY(-20px) scale(0.95);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+    .modal-head {
+      padding: 20px 24px;
+      border-bottom: 1px solid #F1F5F9;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .modal-title {
+      font-size: 18px;
+      font-weight: 700;
+      color: #0F172A;
+    }
+    .modal-close {
+      background: #F1F5F9;
+      border: none;
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 18px;
+      color: #64748B;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+    }
+    .modal-close:hover {
+      background: #E2E8F0;
+      color: #0F172A;
+    }
+    .modal-content form {
+      padding: 24px;
+    }
+    
+    /* Add Visa Button */
+    .btn-add-visa {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 20px;
+      background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+      color: white;
+      border: none;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      box-shadow: 0 4px 6px rgba(16, 185, 129, 0.2);
+    }
+    .btn-add-visa:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 12px rgba(16, 185, 129, 0.3);
+    }
+    
+    /* Form buttons */
+    .btn-secondary {
+      padding: 10px 20px;
+      background: #F1F5F9;
+      color: #475569;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-secondary:hover {
+      background: #E2E8F0;
     }
   </style>
 </head>
@@ -55,7 +160,10 @@
         <div class="page-head-title">🛂 Visa Management</div>
         <div style="font-size:12px;color:#94A3B8;margin-top:2px;">Track visa expiries and follow up with customers</div>
       </div>
-      <button onclick="document.getElementById('addModal').style.display='flex'" class="btn-primary">+ Add Visa Manually</button>
+      <button onclick="document.getElementById('addModal').style.display='flex'" class="btn-add-visa">
+        <span style="font-size:16px;">+</span>
+        <span>Add Visa</span>
+      </button>
     </div>
 
     <!-- Stats Cards -->
@@ -172,9 +280,9 @@
 
   <!-- Add Visa Modal -->
   <div id="addModal" class="modal">
-    <div class="modal-content" style="max-width:600px;">
+    <div class="modal-content">
       <div class="modal-head">
-        <div class="modal-title">Add Visa Manually</div>
+        <div class="modal-title">➕ Add Visa Record</div>
         <button class="modal-close" onclick="document.getElementById('addModal').style.display='none'">✕</button>
       </div>
       <form method="POST" action="/visa-management/add">
@@ -204,9 +312,9 @@
 
   <!-- Edit Visa Modal -->
   <div id="editModal" class="modal">
-    <div class="modal-content" style="max-width:600px;">
+    <div class="modal-content">
       <div class="modal-head">
-        <div class="modal-title">Edit Visa Details</div>
+        <div class="modal-title">✏️ Edit Visa Details</div>
         <button class="modal-close" onclick="document.getElementById('editModal').style.display='none'">✕</button>
       </div>
       <form method="POST" id="editForm">
