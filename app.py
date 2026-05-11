@@ -498,6 +498,11 @@ class Job(db.Model):
     final_remarks = db.Column(db.Text, nullable=True)
     future_work_notes = db.Column(db.Text, nullable=True)
     completed_at = db.Column(db.DateTime, nullable=True)
+    # Visa Management fields
+    visa_expiry_date = db.Column(db.Date, nullable=True)
+    visa_customer_name = db.Column(db.String(200), nullable=True)
+    visa_customer_phone = db.Column(db.String(50), nullable=True)
+    visa_third_party_agency = db.Column(db.String(200), nullable=True)
     # Partner commission fields
     partner_commission_expected = db.Column(db.Boolean, default=False)
     partner_name = db.Column(db.String(100))
@@ -2784,6 +2789,16 @@ def job_detail(job_id):
             # Update customer balance if remaining amount collected
             if customer_remaining and float(customer_remaining) > 0:
                 job.money_given = (job.money_given or 0) + float(customer_remaining)
+            
+            # Save visa expiry for Visit Visa tasks
+            if job.service_type == 'Visit Visa':
+                visa_expiry = request.form.get('visa_expiry_date')
+                if visa_expiry:
+                    from datetime import datetime
+                    job.visa_expiry_date = datetime.strptime(visa_expiry, '%Y-%m-%d').date()
+                    job.visa_customer_name = job.customer.name if job.customer else None
+                    job.visa_customer_phone = job.customer.phone if job.customer else None
+                    job.visa_third_party_agency = request.form.get('visa_third_party_agency')
             
             # Log completion to timeline
             completion_note = f'Task completed. Revenue: AED {revenue_amount}'
@@ -5170,9 +5185,135 @@ def toggle_vendor_active(vendor_id):
 @app.route('/visa-management')
 @login_required
 def visa_management():
-    """Visa Management - Track visa expiries (Coming Soon)"""
-    flash('Visa Management feature is under development. Will be available in the next update!', 'warning')
-    return redirect(url_for('dashboard'))
+    """Visa Management - Track visa expiries"""
+    from datetime import timedelta
+    
+    # Get filter parameters
+    filter_type = request.args.get('filter', 'all')
+    agency = request.args.get('agency')
+    
+    # Base query - all jobs with visa expiry date
+    query = Job.query.filter(Job.visa_expiry_date.isnot(None))
+    
+    # Apply filters
+    today = datetime.now().date()
+    if filter_type == 'expiring':
+        thirty_days = today + timedelta(days=30)
+        query = query.filter(Job.visa_expiry_date <= thirty_days)
+        query = query.filter(Job.visa_expiry_date >= today)
+    elif filter_type == 'expired':
+        query = query.filter(Job.visa_expiry_date < today)
+    
+    if agency:
+        query = query.filter(Job.visa_third_party_agency == agency)
+    
+    visas = query.order_by(Job.visa_expiry_date.asc()).all()
+    
+    # Calculate days remaining and status for each
+    for visa in visas:
+        visa.days_remaining = (visa.visa_expiry_date - today).days
+        
+        # Set status
+        if visa.days_remaining < 0:
+            visa.status = 'expired'
+        elif visa.days_remaining <= 30:
+            visa.status = 'expiring'
+        else:
+            visa.status = 'active'
+    
+    # Get all agencies for filter dropdown
+    agencies = db.session.query(Job.visa_third_party_agency)\
+        .filter(Job.visa_third_party_agency.isnot(None))\
+        .distinct().all()
+    agencies = [a[0] for a in agencies if a[0]]
+    
+    # Calculate stats
+    total_active = sum(1 for v in visas if v.status == 'active')
+    total_expiring = sum(1 for v in visas if v.status == 'expiring')
+    total_expired = sum(1 for v in visas if v.status == 'expired')
+    
+    return render_template('visa_management.html',
+                         visas=visas,
+                         agencies=agencies,
+                         stats={
+                             'total': len(visas),
+                             'active': total_active,
+                             'expiring': total_expiring,
+                             'expired': total_expired
+                         },
+                         filter_type=filter_type,
+                         selected_agency=agency)
+
+@app.route('/visa-management/add', methods=['POST'])
+@login_required
+def add_visa_manually():
+    """Add a visa record manually (not from a task)"""
+    try:
+        # Create a dummy job record just for visa tracking
+        job = Job()
+        job.customer_id = 1  # Dummy customer (you might want to create a "Manual Entry" customer)
+        job.job_type = 'Manual Visa Entry'
+        job.assigned_to = session['user_id']
+        job.status = 'Done'
+        job.created_by = session['user_id']
+        
+        # Visa fields
+        job.visa_customer_name = request.form.get('customer_name')
+        job.visa_customer_phone = request.form.get('customer_phone')
+        job.visa_expiry_date = datetime.strptime(request.form.get('expiry_date'), '%Y-%m-%d').date()
+        job.visa_third_party_agency = request.form.get('agency')
+        
+        db.session.add(job)
+        db.session.commit()
+        
+        flash(f'Visa added for {job.visa_customer_name}')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error adding visa: {str(e)}', 'error')
+    
+    return redirect(url_for('visa_management'))
+
+@app.route('/visa-management/<int:job_id>/edit', methods=['POST'])
+@login_required
+def edit_visa(job_id):
+    """Edit visa details"""
+    try:
+        job = Job.query.get_or_404(job_id)
+        
+        job.visa_customer_name = request.form.get('customer_name')
+        job.visa_customer_phone = request.form.get('customer_phone')
+        job.visa_expiry_date = datetime.strptime(request.form.get('expiry_date'), '%Y-%m-%d').date()
+        job.visa_third_party_agency = request.form.get('agency')
+        
+        db.session.commit()
+        flash('Visa details updated')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error updating visa: {str(e)}', 'error')
+    
+    return redirect(url_for('visa_management'))
+
+@app.route('/visa-management/<int:job_id>/delete')
+@login_required
+def delete_visa(job_id):
+    """Delete a visa record"""
+    try:
+        job = Job.query.get_or_404(job_id)
+        
+        # Just clear the visa fields instead of deleting the job
+        customer_name = job.visa_customer_name
+        job.visa_expiry_date = None
+        job.visa_customer_name = None
+        job.visa_customer_phone = None
+        job.visa_third_party_agency = None
+        
+        db.session.commit()
+        flash(f'Visa record for {customer_name} removed')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error deleting visa: {str(e)}', 'error')
+    
+    return redirect(url_for('visa_management'))
 
 # ══════════════════════════════════════════════════════════════════════════════
 # TEMPORARY ADMIN ROUTE - Fix April 30 Revenue Dates

@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tahfeel CRM — Visa Management</title>
+  <link rel="stylesheet" href="/static/css/tahfeel.css">
+  <link rel="icon" href="/static/img/logo_white.png" type="image/png">
+  <style>
+    .status-badge {
+      padding: 4px 10px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 600;
+      display: inline-block;
+    }
+    .status-active { background: #D1FAE5; color: #065F46; }
+    .status-expiring { background: #FED7AA; color: #92400E; }
+    .status-expired { background: #FEE2E2; color: #991B1B; }
+    
+    .filter-btn {
+      padding: 8px 16px;
+      background: white;
+      border: 1px solid #E2E8F0;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 500;
+      transition: all 0.2s;
+    }
+    .filter-btn:hover {
+      border-color: #0EA5E9;
+      background: #F0F9FF;
+    }
+    .filter-btn.active {
+      background: #0EA5E9;
+      color: white;
+      border-color: #0EA5E9;
+    }
+  </style>
+</head>
+<body>
+  {%- from 'macros.html' import topbar, nav -%}
+  {{ topbar() }}
+  {{ nav('visa_management') }}
+  <div class="container">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}{% for cat, msg in messages %}
+        <div class="flash {% if cat == 'error' %}error{% elif cat == 'warning' %}warning{% endif %}">{{ msg }}</div>
+      {% endfor %}{% endif %}
+    {% endwith %}
+
+    <div class="page-head">
+      <div>
+        <div class="page-head-title">🛂 Visa Management</div>
+        <div style="font-size:12px;color:#94A3B8;margin-top:2px;">Track visa expiries and follow up with customers</div>
+      </div>
+      <button onclick="document.getElementById('addModal').style.display='flex'" class="btn-primary">+ Add Visa Manually</button>
+    </div>
+
+    <!-- Stats Cards -->
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;margin-bottom:24px;">
+      <div class="card" style="padding:20px;">
+        <div style="font-size:11px;color:#64748B;font-weight:600;text-transform:uppercase;margin-bottom:4px;">Total Visas</div>
+        <div style="font-size:28px;font-weight:700;color:#0F172A;">{{ stats.total }}</div>
+      </div>
+      <div class="card" style="padding:20px;">
+        <div style="font-size:11px;color:#065F46;font-weight:600;text-transform:uppercase;margin-bottom:4px;">Active</div>
+        <div style="font-size:28px;font-weight:700;color:#10B981;">{{ stats.active }}</div>
+      </div>
+      <div class="card" style="padding:20px;">
+        <div style="font-size:11px;color:#92400E;font-weight:600;text-transform:uppercase;margin-bottom:4px;">Expiring Soon</div>
+        <div style="font-size:28px;font-weight:700;color:#F59E0B;">{{ stats.expiring }}</div>
+        <div style="font-size:11px;color:#78716C;margin-top:4px;">Next 30 days</div>
+      </div>
+      <div class="card" style="padding:20px;">
+        <div style="font-size:11px;color:#991B1B;font-weight:600;text-transform:uppercase;margin-bottom:4px;">Expired</div>
+        <div style="font-size:28px;font-weight:700;color:#DC2626;">{{ stats.expired }}</div>
+      </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="card" style="padding:16px;margin-bottom:16px;">
+      <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+        <a href="/visa-management" class="filter-btn {% if not filter_type or filter_type == 'all' %}active{% endif %}">All Visas</a>
+        <a href="/visa-management?filter=expiring" class="filter-btn {% if filter_type == 'expiring' %}active{% endif %}">Expiring Soon</a>
+        <a href="/visa-management?filter=expired" class="filter-btn {% if filter_type == 'expired' %}active{% endif %}">Expired</a>
+        
+        <div style="flex:1;"></div>
+        
+        {% if agencies %}
+        <select onchange="window.location.href='/visa-management?filter={{ filter_type or 'all' }}&agency=' + this.value" style="padding:8px 12px;border:1px solid #E2E8F0;border-radius:8px;font-size:13px;">
+          <option value="">All Agencies</option>
+          {% for agency in agencies %}
+          <option value="{{ agency }}" {% if selected_agency == agency %}selected{% endif %}>{{ agency }}</option>
+          {% endfor %}
+        </select>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Visas Table -->
+    <div class="card">
+      <div class="card-body" style="padding:0;">
+        <table>
+          <thead>
+            <tr>
+              <th>Customer</th>
+              <th>Phone</th>
+              <th>Third Party Agency</th>
+              <th>Expiry Date</th>
+              <th>Days Remaining</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for visa in visas %}
+            <tr>
+              <td>
+                <div style="font-weight:600;color:var(--text-primary);">{{ visa.visa_customer_name or 'N/A' }}</div>
+                {% if visa.customer %}
+                <div style="font-size:11px;color:var(--text-muted);">Task #{{ visa.id }}</div>
+                {% endif %}
+              </td>
+              <td>
+                {% if visa.visa_customer_phone %}
+                <div style="font-size:13px;">{{ visa.visa_customer_phone }}</div>
+                {% else %}
+                <span style="color:#94A3B8;">—</span>
+                {% endif %}
+              </td>
+              <td>{{ visa.visa_third_party_agency or '—' }}</td>
+              <td>
+                <div style="font-weight:600;">{{ visa.visa_expiry_date.strftime('%d %b %Y') if visa.visa_expiry_date else '—' }}</div>
+              </td>
+              <td>
+                {% if visa.days_remaining < 0 %}
+                <span style="color:#DC2626;font-weight:600;">{{ visa.days_remaining }} days</span>
+                {% elif visa.days_remaining <= 30 %}
+                <span style="color:#F59E0B;font-weight:600;">{{ visa.days_remaining }} days</span>
+                {% else %}
+                <span style="color:#10B981;">{{ visa.days_remaining }} days</span>
+                {% endif %}
+              </td>
+              <td>
+                <span class="status-badge status-{{ visa.status }}">
+                  {% if visa.status == 'active' %}✓ Active
+                  {% elif visa.status == 'expiring' %}⚠ Expiring
+                  {% else %}✕ Expired
+                  {% endif %}
+                </span>
+              </td>
+              <td>
+                <div style="display:flex;gap:5px;">
+                  {% if visa.visa_customer_phone %}
+                  <a href="https://wa.me/{{ visa.visa_customer_phone.replace('+', '').replace(' ', '') }}" target="_blank" class="ib" style="background:#25D366;color:white;" title="WhatsApp">💬</a>
+                  {% endif %}
+                  <button onclick="editVisa({{ visa.id }})" class="ib" title="Edit">✏️</button>
+                  <a href="/visa-management/{{ visa.id }}/delete" class="ib ib-del" onclick="return confirm('Delete this visa record?')" title="Delete">🗑️</a>
+                </div>
+              </td>
+            </tr>
+            {% else %}
+            <tr><td colspan="7" style="text-align:center;padding:40px;color:var(--text-muted);">No visas found. Close a Visit Visa task to add one automatically.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add Visa Modal -->
+  <div id="addModal" class="modal">
+    <div class="modal-content" style="max-width:600px;">
+      <div class="modal-head">
+        <div class="modal-title">Add Visa Manually</div>
+        <button class="modal-close" onclick="document.getElementById('addModal').style.display='none'">✕</button>
+      </div>
+      <form method="POST" action="/visa-management/add">
+        <div class="form-group">
+          <label>Customer Name <span style="color:#DC2626;">*</span></label>
+          <input type="text" name="customer_name" required>
+        </div>
+        <div class="form-group">
+          <label>Phone Number <span style="color:#DC2626;">*</span></label>
+          <input type="text" name="customer_phone" placeholder="+971 XX XXX XXXX" required>
+        </div>
+        <div class="form-group">
+          <label>Visa Expiry Date <span style="color:#DC2626;">*</span></label>
+          <input type="date" name="expiry_date" required>
+        </div>
+        <div class="form-group">
+          <label>Third Party Agency</label>
+          <input type="text" name="agency" placeholder="Optional">
+        </div>
+        <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:20px;">
+          <button type="button" class="btn-secondary" onclick="document.getElementById('addModal').style.display='none'">Cancel</button>
+          <button type="submit" class="btn-primary">Add Visa</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Edit Visa Modal -->
+  <div id="editModal" class="modal">
+    <div class="modal-content" style="max-width:600px;">
+      <div class="modal-head">
+        <div class="modal-title">Edit Visa Details</div>
+        <button class="modal-close" onclick="document.getElementById('editModal').style.display='none'">✕</button>
+      </div>
+      <form method="POST" id="editForm">
+        <div class="form-group">
+          <label>Customer Name <span style="color:#DC2626;">*</span></label>
+          <input type="text" name="customer_name" id="editName" required>
+        </div>
+        <div class="form-group">
+          <label>Phone Number <span style="color:#DC2626;">*</span></label>
+          <input type="text" name="customer_phone" id="editPhone" required>
+        </div>
+        <div class="form-group">
+          <label>Visa Expiry Date <span style="color:#DC2626;">*</span></label>
+          <input type="date" name="expiry_date" id="editExpiry" required>
+        </div>
+        <div class="form-group">
+          <label>Third Party Agency</label>
+          <input type="text" name="agency" id="editAgency">
+        </div>
+        <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:20px;">
+          <button type="button" class="btn-secondary" onclick="document.getElementById('editModal').style.display='none'">Cancel</button>
+          <button type="submit" class="btn-primary">Save Changes</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    function editVisa(id) {
+      // This would need to fetch visa data via AJAX in a real implementation
+      // For now, just show the modal
+      document.getElementById('editForm').action = '/visa-management/' + id + '/edit';
+      document.getElementById('editModal').style.display = 'flex';
+    }
+  </script>
+</body>
+</html>
