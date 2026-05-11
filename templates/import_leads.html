@@ -6,62 +6,327 @@
   <title>Tahfeel CRM — Import Leads</title>
     <link rel="stylesheet" href="/static/css/tahfeel.css">
   <link rel="icon" href="/static/img/logo_white.png" type="image/png">
+  <style>
+    .import-container {
+      max-width: 900px;
+      margin: 0 auto;
+    }
+    .import-card {
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      padding: 32px;
+    }
+    .import-header {
+      margin-bottom: 32px;
+    }
+    .import-header h1 {
+      font-size: 24px;
+      font-weight: 700;
+      color: #0F172A;
+      margin: 0 0 8px 0;
+    }
+    .import-header p {
+      font-size: 14px;
+      color: #64748B;
+      margin: 0;
+    }
+    .download-section {
+      background: linear-gradient(135deg, #0EA5E9 0%, #0284C7 100%);
+      border-radius: 10px;
+      padding: 20px 24px;
+      margin-bottom: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .download-info {
+      color: white;
+    }
+    .download-info h3 {
+      font-size: 16px;
+      font-weight: 600;
+      margin: 0 0 4px 0;
+    }
+    .download-info p {
+      font-size: 13px;
+      opacity: 0.9;
+      margin: 0;
+    }
+    .btn-download-modern {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 20px;
+      background: white;
+      color: #0EA5E9;
+      border-radius: 8px;
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 14px;
+      transition: all 0.2s;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .btn-download-modern:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    }
+    .instructions {
+      background: #F8FAFC;
+      border: 1px solid #E2E8F0;
+      border-radius: 10px;
+      padding: 20px;
+      margin-bottom: 32px;
+    }
+    .instructions h3 {
+      font-size: 14px;
+      font-weight: 600;
+      color: #0F172A;
+      margin: 0 0 12px 0;
+    }
+    .instructions ol {
+      margin: 0;
+      padding-left: 20px;
+      color: #475569;
+      font-size: 13px;
+      line-height: 1.8;
+    }
+    .columns-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+      gap: 8px;
+      margin-top: 16px;
+    }
+    .col-badge {
+      padding: 6px 10px;
+      background: white;
+      border: 1px solid #E2E8F0;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 500;
+      color: #475569;
+    }
+    .col-badge.required {
+      background: #FEF2F2;
+      border-color: #FCA5A5;
+      color: #DC2626;
+    }
+    .upload-zone {
+      border: 2px dashed #CBD5E1;
+      border-radius: 12px;
+      padding: 48px 24px;
+      text-align: center;
+      background: #F8FAFC;
+      cursor: pointer;
+      transition: all 0.2s;
+      margin-bottom: 24px;
+    }
+    .upload-zone:hover {
+      border-color: #0EA5E9;
+      background: #F0F9FF;
+    }
+    .upload-zone.dragging {
+      border-color: #0EA5E9;
+      background: #E0F2FE;
+    }
+    .upload-icon {
+      font-size: 48px;
+      margin-bottom: 12px;
+    }
+    .upload-zone h4 {
+      font-size: 16px;
+      font-weight: 600;
+      color: #0F172A;
+      margin: 0 0 4px 0;
+    }
+    .upload-zone p {
+      font-size: 13px;
+      color: #64748B;
+      margin: 0;
+    }
+    .file-selected {
+      background: #ECFDF5;
+      border: 1px solid #86EFAC;
+      border-radius: 8px;
+      padding: 12px 16px;
+      margin-bottom: 24px;
+      display: none;
+      align-items: center;
+      gap: 12px;
+    }
+    .file-selected.show {
+      display: flex;
+    }
+    .file-icon {
+      font-size: 24px;
+    }
+    .file-info {
+      flex: 1;
+    }
+    .file-info .name {
+      font-size: 14px;
+      font-weight: 600;
+      color: #065F46;
+    }
+    .file-info .size {
+      font-size: 12px;
+      color: #047857;
+    }
+    .btn-import {
+      width: 100%;
+      padding: 14px 24px;
+      background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+      color: white;
+      border: none;
+      border-radius: 10px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      box-shadow: 0 4px 6px rgba(16, 185, 129, 0.2);
+    }
+    .btn-import:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 12px rgba(16, 185, 129, 0.3);
+    }
+    .btn-import:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+    }
+  </style>
 </head>
 <body>
-    {%- from 'macros.html' import topbar, nav, welcome -%}
+    {%- from 'macros.html' import topbar, nav -%}
   {{ topbar() }}
   {{ nav('import_leads') }}
   <div class="container">
     {% with messages = get_flashed_messages(with_categories=true) %}
-      {% if messages %}{% for msg in messages %}
-        <div class="flash">{{ msg }}</div>
+      {% if messages %}{% for cat, msg in messages %}
+        <div class="flash {% if cat == 'error' %}error{% elif cat == 'warning' %}warning{% endif %}">{{ msg }}</div>
       {% endfor %}{% endif %}
     {% endwith %}
 
-    <div class="card card-leads">
-      <h2>Import leads from Excel</h2>
-
-      <a href="/leads/template" class="btn-download">⬇ Download Excel Template</a>
-
-      <div class="info-box">
-        <strong>How to use:</strong>
-        1. Download the template above<br>
-        2. Fill in your leads (do not change the column headers)<br>
-        3. For Assigned To — type the staff member's exact name<br>
-        4. Save as .xlsx and upload below<br>
-        5. Required columns are marked with *
-        <div class="columns">
-          <span class="col-item col-required">A — Name *</span>
-          <span class="col-item col-required">C — Phone *</span>
-          <span class="col-item">B — Company</span>
-          <span class="col-item">D — Email</span>
-          <span class="col-item">E — Address</span>
-          <span class="col-item">F — Source</span>
-          <span class="col-item">G — Service</span>
-          <span class="col-item">H — Lead Type</span>
-          <span class="col-item">I — Remarks</span>
-          <span class="col-item">J — Assigned To</span>
+    <div class="import-container">
+      <div class="import-card">
+        <div class="import-header">
+          <h1>📊 Import Leads from Excel</h1>
+          <p>Upload your leads in bulk using our Excel template</p>
         </div>
+
+        <!-- Download Template Section -->
+        <div class="download-section">
+          <div class="download-info">
+            <h3>Step 1: Download Template</h3>
+            <p>Get the pre-formatted Excel file with all required columns</p>
+          </div>
+          <a href="/leads/template" class="btn-download-modern">
+            <span>⬇</span>
+            <span>Download Template</span>
+          </a>
+        </div>
+
+        <!-- Instructions -->
+        <div class="instructions">
+          <h3>📋 How to Use:</h3>
+          <ol>
+            <li>Download the template above</li>
+            <li>Fill in your leads (do not change the column headers)</li>
+            <li>For "Assigned To" — type the staff member's exact name</li>
+            <li>Save as .xlsx and upload below</li>
+            <li>Required columns are marked with *</li>
+          </ol>
+          
+          <h3 style="margin-top: 16px;">Columns in Template:</h3>
+          <div class="columns-grid">
+            <div class="col-badge required">A — Name *</div>
+            <div class="col-badge required">C — Phone *</div>
+            <div class="col-badge">B — Company</div>
+            <div class="col-badge">D — Email</div>
+            <div class="col-badge">E — Address</div>
+            <div class="col-badge">F — Source</div>
+            <div class="col-badge">G — Service</div>
+            <div class="col-badge">H — Lead Type</div>
+            <div class="col-badge">I — Remarks</div>
+            <div class="col-badge">J — Assigned To</div>
+          </div>
+        </div>
+
+        <!-- Upload Form -->
+        <form method="POST" enctype="multipart/form-data" id="uploadForm">
+          <div class="upload-zone" id="uploadZone" onclick="document.getElementById('fileInput').click()">
+            <div class="upload-icon">📁</div>
+            <h4>Step 2: Upload Your File</h4>
+            <p>Click to browse or drag and drop your Excel file here</p>
+            <p style="margin-top: 4px; font-size: 11px; color: #94A3B8;">.xlsx files only</p>
+            <input type="file" id="fileInput" name="file" accept=".xlsx" style="display:none;" onchange="handleFileSelect(this)">
+          </div>
+
+          <div class="file-selected" id="fileSelected">
+            <div class="file-icon">📄</div>
+            <div class="file-info">
+              <div class="name" id="fileName"></div>
+              <div class="size" id="fileSize"></div>
+            </div>
+            <button type="button" onclick="clearFile()" style="background:none;border:none;cursor:pointer;font-size:20px;color:#DC2626;">✕</button>
+          </div>
+
+          <button type="submit" class="btn-import" id="btnImport" disabled>
+            Import Leads
+          </button>
+        </form>
       </div>
-
-      <form method="POST" enctype="multipart/form-data">
-        <label>Select Excel file (.xlsx)</label>
-        <div class="upload-area" onclick="document.getElementById('file-input').click()">
-          <p>Click to browse or drag and drop your Excel file here</p>
-          <p style="font-size:12px;color:#aaa;">.xlsx files only</p>
-          <input type="file" id="file-input" name="file" accept=".xlsx" onchange="showFileName(this)">
-          <div class="file-name" id="file-name"></div>
-        </div>
-        <button type="submit" class="btn-primary">Import Leads</button>
-      </form>
     </div>
   </div>
 
   <script>
-    function showFileName(input) {
-      const name = input.files[0]?.name || '';
-      document.getElementById('file-name').textContent = name ? 'Selected: ' + name : '';
+    const uploadZone = document.getElementById('uploadZone');
+    const fileInput = document.getElementById('fileInput');
+    const fileSelected = document.getElementById('fileSelected');
+    const fileName = document.getElementById('fileName');
+    const fileSize = document.getElementById('fileSize');
+    const btnImport = document.getElementById('btnImport');
+
+    function handleFileSelect(input) {
+      const file = input.files[0];
+      if (file) {
+        fileName.textContent = file.name;
+        fileSize.textContent = formatFileSize(file.size);
+        fileSelected.classList.add('show');
+        btnImport.disabled = false;
+      }
     }
+
+    function formatFileSize(bytes) {
+      if (bytes < 1024) return bytes + ' B';
+      if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+      return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+    }
+
+    function clearFile() {
+      fileInput.value = '';
+      fileSelected.classList.remove('show');
+      btnImport.disabled = true;
+    }
+
+    // Drag and drop
+    uploadZone.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      uploadZone.classList.add('dragging');
+    });
+
+    uploadZone.addEventListener('dragleave', () => {
+      uploadZone.classList.remove('dragging');
+    });
+
+    uploadZone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      uploadZone.classList.remove('dragging');
+      if (e.dataTransfer.files.length) {
+        fileInput.files = e.dataTransfer.files;
+        handleFileSelect(fileInput);
+      }
+    });
   </script>
 </body>
 </html>
