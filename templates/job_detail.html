@@ -271,6 +271,40 @@
           <!-- Completion fields -->
           <div id="completionFields" style="display:none;background:var(--success-bg);border:1px solid #b8ddb0;border-radius:var(--radius-md);padding:14px;margin-top:10px;">
             <div class="section-label" style="color:var(--success);margin-bottom:10px;">Task Completion Details</div>
+            
+            <!-- Revenue Tracking -->
+            <div class="form-group">
+              <label>Revenue Amount (AED) <span style="color:#EF4444;">*</span></label>
+              <input type="number" step="0.01" name="revenue_amount" placeholder="Our profit from this work" required style="background:white;">
+              <small style="color:var(--text-muted);">This is our actual revenue/profit from this job</small>
+            </div>
+
+            <!-- Vendor/Third Party -->
+            <div class="form-group">
+              <label>Vendor/Partner <span style="color:#EF4444;">*</span></label>
+              <select name="vendor_id" required style="background:white;">
+                <option value="">Select vendor...</option>
+                <option value="tahfeel">Tahfeel (Own Work)</option>
+                {% for vendor in vendors %}
+                <option value="{{ vendor.id }}">{{ vendor.name }}</option>
+                {% endfor %}
+              </select>
+              <small style="color:var(--text-muted);">If third party work, select the partner vendor</small>
+            </div>
+
+            <!-- Customer Balance Check -->
+            {% if job.money_taken and job.money_given and (job.money_taken - job.money_given) > 0 %}
+            <div class="form-group">
+              <div style="background:#FEF2F2;border:1px solid #FCA5A5;padding:10px;border-radius:6px;margin-bottom:10px;">
+                <div style="color:#991B1B;font-size:12px;font-weight:600;margin-bottom:4px;">⚠️ Customer has pending balance</div>
+                <div style="color:#7F1D1D;font-size:11px;">Balance: AED {{ "%.2f"|format(job.money_taken - job.money_given) }}</div>
+              </div>
+              <label>Customer Remaining Amount Collected (AED)</label>
+              <input type="number" step="0.01" name="customer_remaining_amount" value="0" placeholder="0.00" style="background:white;">
+              <small style="color:var(--text-muted);">How much of the remaining balance was collected?</small>
+            </div>
+            {% endif %}
+
             <div class="form-group">
               <label>Final Remarks</label>
               <textarea name="final_remarks" placeholder="Summary of outcome..." style="min-height:60px;"></textarea>

@@ -2753,9 +2753,48 @@ def job_detail(job_id):
                 job.completed_at = now_dubai()
             job.final_remarks = request.form.get('final_remarks') or None
             job.future_work_notes = request.form.get('future_work_notes') or None
+            
+            # REVENUE TRACKING - Required when completing task
+            revenue_amount = request.form.get('revenue_amount')
+            vendor_id = request.form.get('vendor_id')
+            customer_remaining = request.form.get('customer_remaining_amount', '0')
+            
+            # Validate required fields
+            if not revenue_amount:
+                flash('Revenue amount is required when completing a task', 'error')
+                return redirect(url_for('job_detail', job_id=job_id))
+            
+            if not vendor_id:
+                flash('Vendor/Partner selection is required', 'error')
+                return redirect(url_for('job_detail', job_id=job_id))
+            
+            # Save revenue
+            job.revenue_amount = float(revenue_amount)
+            job.revenue_date = now_dubai().date()
+            
+            # Save vendor (if not "tahfeel", link to vendor)
+            if vendor_id != 'tahfeel':
+                try:
+                    job.vendor_id = int(vendor_id)
+                except:
+                    job.vendor_id = None
+            else:
+                job.vendor_id = None  # Tahfeel = own work, no vendor
+            
+            # Update customer balance if remaining amount collected
+            if customer_remaining and float(customer_remaining) > 0:
+                job.money_given = (job.money_given or 0) + float(customer_remaining)
+            
             # Log completion to timeline
-            completion_note = 'Task completed.'
-            if job.final_remarks: completion_note += f' Remarks: {job.final_remarks}'
+            completion_note = f'Task completed. Revenue: AED {revenue_amount}'
+            if vendor_id == 'tahfeel':
+                completion_note += ' (Own Work)'
+            else:
+                vendor = Vendor.query.get(int(vendor_id))
+                if vendor:
+                    completion_note += f' (via {vendor.name})'
+            if job.final_remarks: 
+                completion_note += f' | Remarks: {job.final_remarks}'
             update_completion = JobUpdate(job_id=job.id, status=new_status, remark=completion_note, staff_name=session['user_name'])
             db.session.add(update_completion)
         update = JobUpdate(job_id=job.id, status=new_status,
@@ -2770,10 +2809,12 @@ def job_detail(job_id):
     # All jobs for same customer (for multi-task timeline)
     sibling_jobs = Job.query.filter_by(customer_id=job.customer_id).order_by(Job.created_at.asc()).all()
     partners = Partner.query.filter_by(active=True).order_by(Partner.name).all()
+    vendors = Vendor.query.filter_by(active=True).order_by(Vendor.name).all()
     return render_template('job_detail.html', job=job, now=now,
                            statuses=JOB_STATUSES, users=users,
                            service_types=service_types, timedelta=timedelta,
-                           sibling_jobs=sibling_jobs, partners=partners)
+                           sibling_jobs=sibling_jobs, partners=partners,
+                           vendors=vendors)
 
 @app.route('/jobs/<int:job_id>/edit', methods=['GET', 'POST'])
 @login_required
