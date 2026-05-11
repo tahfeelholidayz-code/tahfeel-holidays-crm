@@ -18,11 +18,20 @@
       {% if messages %}{% for cat, msg in messages %}<div class="flash {% if cat == 'error' %}error{% elif cat == 'warning' %}warning{% endif %}">{{ msg }}</div>{% endfor %}{% endif %}
     {% endwith %}
 
-    <div class="page-header">
-      <h2>Documents</h2>
-      <div style="display:flex;gap:8px;">
-        <a href="/documents/export" class="btn-add" style="background:var(--success);border-color:var(--success);">⬇ Export</a>
-        <a href="/documents/add" class="btn-add">+ Add Document</a>
+    <div class="page-head">
+      <div>
+        <div class="page-head-title">📄 Documents</div>
+        <div style="font-size:12px;color:#94A3B8;margin-top:2px;">Manage customer documents and track expiries</div>
+      </div>
+      <div style="display:flex;gap:12px;">
+        <a href="/documents/export" style="display:inline-flex;align-items:center;gap:8px;padding:10px 20px;background:linear-gradient(135deg, #0EA5E9 0%, #0284C7 100%);color:white;border-radius:10px;text-decoration:none;font-weight:600;font-size:14px;transition:all 0.2s;box-shadow:0 4px 6px rgba(14, 165, 233, 0.2);" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 6px 12px rgba(14, 165, 233, 0.3)'" onmouseout="this.style.transform='translateY(0)';this.style.boxShadow='0 4px 6px rgba(14, 165, 233, 0.2)'">
+          <span>⬇</span>
+          <span>Export</span>
+        </a>
+        <a href="/documents/add" style="display:inline-flex;align-items:center;gap:8px;padding:10px 20px;background:linear-gradient(135deg, #10B981 0%, #059669 100%);color:white;border-radius:10px;text-decoration:none;font-weight:600;font-size:14px;transition:all 0.2s;box-shadow:0 4px 6px rgba(16, 185, 129, 0.2);" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 6px 12px rgba(16, 185, 129, 0.3)'" onmouseout="this.style.transform='translateY(0)';this.style.boxShadow='0 4px 6px rgba(16, 185, 129, 0.2)'">
+          <span>+</span>
+          <span>Add Document</span>
+        </a>
       </div>
     </div>
 
