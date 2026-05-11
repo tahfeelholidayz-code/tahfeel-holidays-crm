@@ -4888,22 +4888,27 @@ def assign_to_batch(booking_id):
 @login_required
 def umrah_batches_list():
     """List all umrah batches"""
-    batches = UmrahBatch.query.order_by(UmrahBatch.created_at.desc()).all()
-    
-    own_count = sum(1 for b in batches if b.batch_type == 'Own Trip')
-    third_party_count = sum(1 for b in batches if b.batch_type == 'Third Party')
-    
-    # Calculate total people correctly
-    total_people = 0
-    for batch in batches:
-        if batch.bookings:
-            total_people += sum(booking.total_people for booking in batch.bookings)
-    
-    return render_template('umrah_batches_list.html',
-                         batches=batches,
-                         own_count=own_count,
-                         third_party_count=third_party_count,
-                         total_people=total_people)
+    try:
+        batches = UmrahBatch.query.order_by(UmrahBatch.created_at.desc()).all()
+        
+        own_count = sum(1 for b in batches if b.batch_type == 'Own Trip')
+        third_party_count = sum(1 for b in batches if b.batch_type == 'Third Party')
+        
+        # Calculate total people correctly
+        total_people = 0
+        for batch in batches:
+            if batch.bookings:
+                total_people += sum(booking.total_people for booking in batch.bookings)
+        
+        return render_template('umrah_batches_list.html',
+                             batches=batches,
+                             own_count=own_count,
+                             third_party_count=third_party_count,
+                             total_people=total_people)
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error loading batches: {str(e)}', 'error')
+        return redirect(url_for('umrah_customers'))
 
 @app.route('/umrah/batch/create', methods=['GET', 'POST'])
 @login_required
