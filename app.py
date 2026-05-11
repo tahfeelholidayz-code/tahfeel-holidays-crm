@@ -4790,21 +4790,36 @@ def add_umrah_customer():
 def umrah_customer_detail(booking_id):
     """View customer booking details"""
     try:
-        booking = UmrahBooking.query.get_or_404(booking_id)
-        passengers = UmrahPassenger.query.filter_by(booking_id=booking_id).all()
+        # Try booking first
+        try:
+            booking = UmrahBooking.query.get_or_404(booking_id)
+        except Exception as booking_error:
+            db.session.rollback()
+            flash(f'Error loading booking: {str(booking_error)}', 'error')
+            return redirect(url_for('umrah_customers'))
         
-        # Try to load batches
+        # Try passengers separately
+        try:
+            passengers = UmrahPassenger.query.filter_by(booking_id=booking_id).all()
+        except Exception as passenger_error:
+            db.session.rollback()
+            flash(f'Error loading passengers: {str(passenger_error)}', 'error')
+            return redirect(url_for('umrah_customers'))
+        
+        # Try batches separately
         batches = []
         try:
             batches = UmrahBatch.query.filter_by(status='Planning').all()
         except Exception as batch_error:
             print(f"Warning: Could not load batches: {batch_error}")
+            db.session.rollback()
         
         if not passengers:
             flash('No passengers found for this booking', 'warning')
         
         return render_template('umrah_customer_detail.html', booking=booking, batches=batches, now=datetime.now())
     except Exception as e:
+        db.session.rollback()
         flash(f'Error loading customer details: {str(e)}', 'error')
         return redirect(url_for('umrah_customers'))
 
