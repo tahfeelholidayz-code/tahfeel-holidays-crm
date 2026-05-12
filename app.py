@@ -5372,6 +5372,7 @@ def toggle_vendor_active(vendor_id):
 def visa_management():
     """Visa Management - Track visa expiries"""
     from datetime import timedelta
+    from sqlalchemy import or_
     
     # Get filter parameters
     filter_type = request.args.get('filter', 'all')
@@ -5381,7 +5382,7 @@ def visa_management():
     if filter_type == 'closed':
         query = Job.query.filter(Job.visa_expiry_date.isnot(None), Job.visa_closed == True)
     else:
-        query = Job.query.filter(Job.visa_expiry_date.isnot(None), db.or_(Job.visa_closed == False, Job.visa_closed == None))
+        query = Job.query.filter(Job.visa_expiry_date.isnot(None)).filter(or_(Job.visa_closed == False, Job.visa_closed == None))
     
     # Apply filters
     today = datetime.now().date()
