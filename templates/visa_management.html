@@ -161,10 +161,6 @@
         <div style="font-size:12px;color:#94A3B8;margin-top:2px;">Track visa expiries and follow up with customers</div>
       </div>
       <div style="display:flex;gap:12px;">
-        <a href="/visa-management/template" style="display:inline-flex;align-items:center;gap:8px;padding:10px 20px;background:linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%);color:white;border-radius:10px;text-decoration:none;font-weight:600;font-size:14px;transition:all 0.2s;box-shadow:0 4px 6px rgba(139, 92, 246, 0.2);" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 6px 12px rgba(139, 92, 246, 0.3)'" onmouseout="this.style.transform='translateY(0)';this.style.boxShadow='0 4px 6px rgba(139, 92, 246, 0.2)'">
-          <span>⬇</span>
-          <span>Template</span>
-        </a>
         <button onclick="document.getElementById('importModal').style.display='flex'" style="display:inline-flex;align-items:center;gap:8px;padding:10px 20px;background:linear-gradient(135deg, #F59E0B 0%, #D97706 100%);color:white;border:none;border-radius:10px;font-weight:600;font-size:14px;cursor:pointer;transition:all 0.2s;box-shadow:0 4px 6px rgba(245, 158, 11, 0.2);" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 6px 12px rgba(245, 158, 11, 0.3)'" onmouseout="this.style.transform='translateY(0)';this.style.boxShadow='0 4px 6px rgba(245, 158, 11, 0.2)'">
           <span>⬆</span>
           <span>Import</span>
@@ -269,7 +265,7 @@
               </td>
               <td>
                 <div style="display:flex;gap:5px;">
-                  <button onclick="viewVisa({{ visa.id }}, '{{ visa.visa_customer_name }}', '{{ visa.visa_reference }}', '{{ visa.visa_expiry_date }}', '{{ visa.visa_uid_no }}', '{{ visa.visa_passport_no }}', '{{ visa.visa_dob }}', '{{ visa.visa_customer_phone }}', '{{ visa.visa_contact_number_2 }}', '{{ visa.visa_vendor }}', '{{ visa.visa_third_party_agency }}', '{{ visa.visa_notes }}')" class="ib" style="background:#0EA5E9;color:white;" title="View Details">👁️</button>
+                  <button onclick="viewVisa({{ visa.id }}, '{{ visa.visa_customer_name }}', '{{ visa.visa_reference }}', '{{ visa.visa_expiry_date }}', '{{ visa.visa_uid_no }}', '{{ visa.visa_passport_no }}', '{{ visa.visa_dob }}', '{{ visa.visa_nationality }}', '{{ visa.visa_customer_phone }}', '{{ visa.visa_contact_number_2 }}', '{{ visa.visa_vendor }}', '{{ visa.visa_third_party_agency }}', '{{ visa.visa_notes }}')" class="ib" style="background:#0EA5E9;color:white;" title="View Details">👁️</button>
                   {% if visa.visa_customer_phone %}
                   <a href="https://wa.me/{{ visa.visa_customer_phone.replace('+', '').replace(' ', '') }}" target="_blank" class="ib" style="background:#25D366;color:white;" title="WhatsApp">💬</a>
                   {% endif %}
@@ -328,6 +324,17 @@
         
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
           <div class="form-group">
+            <label>Nationality</label>
+            <input type="text" name="nationality" placeholder="Country">
+          </div>
+          <div class="form-group">
+            <label>Vendor</label>
+            <input type="text" name="vendor" placeholder="Vendor/Agency name">
+          </div>
+        </div>
+        
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+          <div class="form-group">
             <label>Contact Number 1 <span style="color:#DC2626;">*</span></label>
             <input type="text" name="customer_phone" placeholder="+971 XX XXX XXXX" required>
           </div>
@@ -337,11 +344,7 @@
           </div>
         </div>
         
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
-          <div class="form-group">
-            <label>Vendor</label>
-            <input type="text" name="vendor" placeholder="Vendor/Agency name">
-          </div>
+        <div class="form-group">
           <div class="form-group">
             <label>Third Party Agency</label>
             <input type="text" name="agency" placeholder="Agency name (if applicable)">
@@ -393,6 +396,10 @@
           <div>
             <div style="font-size:11px;color:#64748B;font-weight:600;margin-bottom:4px;">DATE OF BIRTH</div>
             <div id="viewDOB" style="font-size:14px;color:#0F172A;"></div>
+          </div>
+          <div>
+            <div style="font-size:11px;color:#64748B;font-weight:600;margin-bottom:4px;">NATIONALITY</div>
+            <div id="viewNationality" style="font-size:14px;color:#0F172A;"></div>
           </div>
           <div>
             <div style="font-size:11px;color:#64748B;font-weight:600;margin-bottom:4px;">CONTACT 1</div>
@@ -449,7 +456,7 @@
   <script>
     let currentVisaId = null;
 
-    function viewVisa(id, name, ref, expiry, uid, passport, dob, phone1, phone2, vendor, agency, notes) {
+    function viewVisa(id, name, ref, expiry, uid, passport, dob, nationality, phone1, phone2, vendor, agency, notes) {
       currentVisaId = id;
       document.getElementById('viewCustomerName').textContent = name || 'N/A';
       document.getElementById('viewReference').textContent = ref || '—';
@@ -457,6 +464,7 @@
       document.getElementById('viewUID').textContent = uid || '—';
       document.getElementById('viewPassport').textContent = passport || '—';
       document.getElementById('viewDOB').textContent = dob || '—';
+      document.getElementById('viewNationality').textContent = nationality || '—';
       document.getElementById('viewPhone1').textContent = phone1 || '—';
       document.getElementById('viewPhone2').textContent = phone2 || '—';
       document.getElementById('viewVendor').textContent = vendor || '—';

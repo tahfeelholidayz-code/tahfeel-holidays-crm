@@ -512,6 +512,7 @@ class Job(db.Model):
     visa_vendor = db.Column(db.String(200), nullable=True)
     visa_notes = db.Column(db.Text, nullable=True)
     visa_closed = db.Column(db.Boolean, default=False, nullable=True)
+    visa_nationality = db.Column(db.String(100), nullable=True)
     # Partner commission fields
     partner_commission_expected = db.Column(db.Boolean, default=False)
     partner_name = db.Column(db.String(100))
@@ -5458,6 +5459,7 @@ def add_visa_manually():
         if dob:
             job.visa_dob = datetime.strptime(dob, '%Y-%m-%d').date()
         
+        job.visa_nationality = request.form.get('nationality')
         job.visa_customer_phone = request.form.get('customer_phone')
         job.visa_contact_number_2 = request.form.get('contact_number_2')
         job.visa_vendor = request.form.get('vendor')
@@ -5600,7 +5602,7 @@ def export_visas():
         
         # Headers
         headers = ['Customer Name', 'Reference', 'Expiry Date', 'Days Remaining', 'UID Number', 
-                   'Passport Number', 'Date of Birth', 'Contact Number 1', 'Contact Number 2', 
+                   'Passport Number', 'Date of Birth', 'Nationality', 'Contact Number 1', 'Contact Number 2', 
                    'Vendor', 'Third Party Agency', 'Notes', 'Status']
         ws.append(headers)
         
@@ -5633,6 +5635,7 @@ def export_visas():
                 visa.visa_uid_no or '',
                 visa.visa_passport_no or '',
                 visa.visa_dob.strftime('%d/%m/%Y') if visa.visa_dob else '',
+                visa.visa_nationality or '',
                 visa.visa_customer_phone or '',
                 visa.visa_contact_number_2 or '',
                 visa.visa_vendor or '',
@@ -5684,7 +5687,7 @@ def visa_template():
         
         # Headers with instructions
         headers = ['Customer Name*', 'Reference', 'Expiry Date* (DD/MM/YYYY)', 'UID Number', 
-                   'Passport Number', 'Date of Birth (DD/MM/YYYY)', 'Contact Number 1*', 
+                   'Passport Number', 'Date of Birth (DD/MM/YYYY)', 'Nationality', 'Contact Number 1*', 
                    'Contact Number 2', 'Vendor', 'Third Party Agency', 'Notes']
         ws.append(headers)
         
@@ -5704,6 +5707,7 @@ def visa_template():
             '784-1234-5678901-2',
             'AB1234567',
             '01/01/1990',
+            'Indian',
             '+971 50 123 4567',
             '+971 55 987 6543',
             'ABC Visa Services',
@@ -5776,7 +5780,7 @@ def import_visas():
                 if not any(row):
                     continue
                 
-                customer_name, reference, expiry_str, uid, passport, dob_str, phone1, phone2, vendor, agency, notes = row[:11]
+                customer_name, reference, expiry_str, uid, passport, dob_str, nationality, phone1, phone2, vendor, agency, notes = row[:12]
                 
                 # Validate required fields
                 if not customer_name:
@@ -5831,6 +5835,7 @@ def import_visas():
                 job.visa_uid_no = uid
                 job.visa_passport_no = passport
                 job.visa_dob = dob
+                job.visa_nationality = nationality
                 job.visa_customer_phone = phone1
                 job.visa_contact_number_2 = phone2
                 job.visa_vendor = vendor
