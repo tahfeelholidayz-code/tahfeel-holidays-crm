@@ -844,6 +844,61 @@ def logout():
     session.clear()
     return redirect(url_for('login'))
 
+@app.route('/profile', methods=['GET', 'POST'])
+@login_required
+def profile():
+    """User profile - edit own details and password"""
+    user = User.query.get(session['user_id'])
+    
+    if request.method == 'POST':
+        try:
+            # Update basic info
+            user.name = request.form.get('name', '').strip()
+            user.email = request.form.get('email', '').strip()
+            user.phone = request.form.get('phone', '').strip() or None
+            
+            # Check if trying to change password
+            current_password = request.form.get('current_password', '').strip()
+            new_password = request.form.get('new_password', '').strip()
+            confirm_password = request.form.get('confirm_password', '').strip()
+            
+            if new_password or confirm_password or current_password:
+                # Validate password change
+                if not current_password:
+                    flash('Current password is required to change password', 'error')
+                    return render_template('profile.html', user=user)
+                
+                if not check_password_hash(user.password, current_password):
+                    flash('Current password is incorrect', 'error')
+                    return render_template('profile.html', user=user)
+                
+                if not new_password:
+                    flash('New password is required', 'error')
+                    return render_template('profile.html', user=user)
+                
+                if new_password != confirm_password:
+                    flash('New passwords do not match', 'error')
+                    return render_template('profile.html', user=user)
+                
+                if len(new_password) < 6:
+                    flash('Password must be at least 6 characters', 'error')
+                    return render_template('profile.html', user=user)
+                
+                # Update password
+                user.password = generate_password_hash(new_password)
+                flash('Profile updated successfully! Password changed.')
+            else:
+                flash('Profile updated successfully')
+            
+            db.session.commit()
+            return redirect(url_for('profile'))
+            
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Error updating profile: {str(e)}', 'error')
+    
+    return render_template('profile.html', user=user)
+
 @app.route('/dashboard')
 @login_required
 def dashboard():
@@ -995,8 +1050,8 @@ def dashboard():
                                total_partner_pending=total_partner_pending,
                                total_monthly_target=total_monthly_target)
 
-    # ── Admin & Super Admin Dashboard (Full Access) ──────────────────────────────
-    if role in ['admin', 'super_admin']:
+    # ── Admin Dashboard (Full Access to Everything) ──────────────────────────────
+    if role == 'admin':
         all_leads = Lead.query.order_by(Lead.due_date).all()
         date_filter = request.args.get('date', 'month')  # DEFAULT TO CURRENT MONTH
         from_date = request.args.get('from', '')
