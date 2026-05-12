@@ -2154,6 +2154,84 @@ def admin_delete_source(source_id):
     flash(f'Source "{source.name}" removed')
     return redirect(url_for('admin_panel'))
 
+@app.route('/users')
+@login_required
+def users():
+    """User Management - Admin only"""
+    if session.get('role') != 'admin':
+        flash('Access denied. Admin only.', 'error')
+        return redirect(url_for('dashboard'))
+    
+    users = User.query.order_by(User.name).all()
+    return render_template('users.html', users=users)
+
+@app.route('/users/add', methods=['POST'])
+@login_required
+def add_user():
+    """Add new user - Admin only"""
+    if session.get('role') != 'admin':
+        flash('Access denied', 'error')
+        return redirect(url_for('dashboard'))
+    
+    try:
+        name = request.form.get('name', '').strip()
+        email = request.form.get('email', '').strip()
+        phone = request.form.get('phone', '').strip() or None
+        password = request.form.get('password', '').strip()
+        role = request.form.get('role', 'staff')
+        
+        # Check if email already exists
+        if User.query.filter_by(email=email).first():
+            flash('Email already exists', 'error')
+            return redirect(url_for('users'))
+        
+        user = User(
+            name=name,
+            email=email,
+            phone=phone,
+            password=generate_password_hash(password),
+            role=role,
+            active=True
+        )
+        
+        db.session.add(user)
+        db.session.commit()
+        flash(f'User {name} added successfully')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error adding user: {str(e)}', 'error')
+    
+    return redirect(url_for('users'))
+
+@app.route('/users/<int:user_id>/edit', methods=['POST'])
+@login_required
+def edit_user(user_id):
+    """Edit user - Admin only"""
+    if session.get('role') != 'admin':
+        flash('Access denied', 'error')
+        return redirect(url_for('dashboard'))
+    
+    try:
+        user = User.query.get_or_404(user_id)
+        
+        user.name = request.form.get('name', '').strip()
+        user.email = request.form.get('email', '').strip()
+        user.phone = request.form.get('phone', '').strip() or None
+        user.role = request.form.get('role', 'staff')
+        
+        # Update password if provided
+        new_password = request.form.get('password', '').strip()
+        if new_password:
+            user.password = generate_password_hash(new_password)
+        
+        db.session.commit()
+        flash(f'User {user.name} updated successfully')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error updating user: {str(e)}', 'error')
+    
+    return redirect(url_for('users'))
+
 @app.route('/users/<int:user_id>/toggle')
 @login_required
 @admin_required
@@ -2162,7 +2240,7 @@ def toggle_user(user_id):
     user.active = not user.active
     db.session.commit()
     flash(f'{"Activated" if user.active else "Deactivated"} {user.name}')
-    return redirect(url_for('admin_panel'))
+    return redirect(url_for('users'))
 
 @app.route('/admin/staff/<int:user_id>/toggle')
 @login_required
