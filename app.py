@@ -850,12 +850,14 @@ def dashboard():
     now = now_dubai()
     role = session['role']
 
-    # ── Finance dashboard ────────────────────────────────────────────────────
+    # ── Staff Dashboard (Limited to assigned tasks only) ────────────────────────
     if role == 'staff':
         date_filter = request.args.get('date', 'month')  # Default to current month
         
         try:
-            all_jobs = Job.query.order_by(Job.created_at.desc()).all()
+            # Staff only sees their OWN assigned jobs
+            user_id = session['user_id']
+            all_jobs = Job.query.filter_by(assigned_to=user_id).order_by(Job.created_at.desc()).all()
             
             # Filter jobs by date
             if date_filter == 'today':
@@ -993,8 +995,8 @@ def dashboard():
                                total_partner_pending=total_partner_pending,
                                total_monthly_target=total_monthly_target)
 
-    # ── Admin dashboard ──────────────────────────────────────────────────────
-    if role == 'admin':
+    # ── Admin & Super Admin Dashboard (Full Access) ──────────────────────────────
+    if role in ['admin', 'super_admin']:
         all_leads = Lead.query.order_by(Lead.due_date).all()
         date_filter = request.args.get('date', 'month')  # DEFAULT TO CURRENT MONTH
         from_date = request.args.get('from', '')
@@ -2203,6 +2205,8 @@ def add_customer():
                 email=lead.email, address=lead.address, source=lead.source,
                 notes=request.form.get('notes'), lead_id=int(lead_id)
             )
+            # Mark lead as converted
+            lead.status = 'Converted'
         else:
             customer = Customer(
                 name=request.form.get('name', '').strip(),
