@@ -160,10 +160,24 @@
         <div class="page-head-title">🛂 Visa Management</div>
         <div style="font-size:12px;color:#94A3B8;margin-top:2px;">Track visa expiries and follow up with customers</div>
       </div>
-      <button onclick="document.getElementById('addModal').style.display='flex'" class="btn-add-visa">
-        <span style="font-size:16px;">+</span>
-        <span>Add Visa</span>
-      </button>
+      <div style="display:flex;gap:12px;">
+        <a href="/visa-management/template" style="display:inline-flex;align-items:center;gap:8px;padding:10px 20px;background:linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%);color:white;border-radius:10px;text-decoration:none;font-weight:600;font-size:14px;transition:all 0.2s;box-shadow:0 4px 6px rgba(139, 92, 246, 0.2);" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 6px 12px rgba(139, 92, 246, 0.3)'" onmouseout="this.style.transform='translateY(0)';this.style.boxShadow='0 4px 6px rgba(139, 92, 246, 0.2)'">
+          <span>⬇</span>
+          <span>Template</span>
+        </a>
+        <button onclick="document.getElementById('importModal').style.display='flex'" style="display:inline-flex;align-items:center;gap:8px;padding:10px 20px;background:linear-gradient(135deg, #F59E0B 0%, #D97706 100%);color:white;border:none;border-radius:10px;font-weight:600;font-size:14px;cursor:pointer;transition:all 0.2s;box-shadow:0 4px 6px rgba(245, 158, 11, 0.2);" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 6px 12px rgba(245, 158, 11, 0.3)'" onmouseout="this.style.transform='translateY(0)';this.style.boxShadow='0 4px 6px rgba(245, 158, 11, 0.2)'">
+          <span>⬆</span>
+          <span>Import</span>
+        </button>
+        <a href="/visa-management/export" style="display:inline-flex;align-items:center;gap:8px;padding:10px 20px;background:linear-gradient(135deg, #0EA5E9 0%, #0284C7 100%);color:white;border-radius:10px;text-decoration:none;font-weight:600;font-size:14px;transition:all 0.2s;box-shadow:0 4px 6px rgba(14, 165, 233, 0.2);" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 6px 12px rgba(14, 165, 233, 0.3)'" onmouseout="this.style.transform='translateY(0)';this.style.boxShadow='0 4px 6px rgba(14, 165, 233, 0.2)'">
+          <span>📊</span>
+          <span>Export</span>
+        </a>
+        <button onclick="document.getElementById('addModal').style.display='flex'" class="btn-add-visa">
+          <span style="font-size:16px;">+</span>
+          <span>Add Visa</span>
+        </button>
+      </div>
     </div>
 
     <!-- Stats Cards -->
@@ -214,10 +228,15 @@
           <thead>
             <tr>
               <th>Customer</th>
-              <th>Phone</th>
-              <th>Third Party Agency</th>
+              <th>Reference</th>
               <th>Expiry Date</th>
-              <th>Days Remaining</th>
+              <th>Days Left</th>
+              <th>UID No</th>
+              <th>Passport</th>
+              <th>DOB</th>
+              <th>Contact 1</th>
+              <th>Contact 2</th>
+              <th>Vendor</th>
               <th>Status</th>
               <th>Actions</th>
             </tr>
@@ -227,18 +246,11 @@
             <tr>
               <td>
                 <div style="font-weight:600;color:var(--text-primary);">{{ visa.visa_customer_name or 'N/A' }}</div>
-                {% if visa.customer %}
-                <div style="font-size:11px;color:var(--text-muted);">Task #{{ visa.id }}</div>
+                {% if visa.visa_notes %}
+                <div style="font-size:10px;color:var(--text-muted);margin-top:2px;" title="{{ visa.visa_notes }}">📝 {{ visa.visa_notes[:30] }}...</div>
                 {% endif %}
               </td>
-              <td>
-                {% if visa.visa_customer_phone %}
-                <div style="font-size:13px;">{{ visa.visa_customer_phone }}</div>
-                {% else %}
-                <span style="color:#94A3B8;">—</span>
-                {% endif %}
-              </td>
-              <td>{{ visa.visa_third_party_agency or '—' }}</td>
+              <td>{{ visa.visa_reference or '—' }}</td>
               <td>
                 <div style="font-weight:600;">{{ visa.visa_expiry_date.strftime('%d %b %Y') if visa.visa_expiry_date else '—' }}</div>
               </td>
@@ -251,6 +263,18 @@
                 <span style="color:#10B981;">{{ visa.days_remaining }} days</span>
                 {% endif %}
               </td>
+              <td>{{ visa.visa_uid_no or '—' }}</td>
+              <td>{{ visa.visa_passport_no or '—' }}</td>
+              <td>{{ visa.visa_dob.strftime('%d %b %Y') if visa.visa_dob else '—' }}</td>
+              <td>
+                {% if visa.visa_customer_phone %}
+                <div style="font-size:13px;">{{ visa.visa_customer_phone }}</div>
+                {% else %}
+                <span style="color:#94A3B8;">—</span>
+                {% endif %}
+              </td>
+              <td>{{ visa.visa_contact_number_2 or '—' }}</td>
+              <td>{{ visa.visa_vendor or '—' }}</td>
               <td>
                 <span class="status-badge status-{{ visa.status }}">
                   {% if visa.status == 'active' %}✓ Active
@@ -264,13 +288,13 @@
                   {% if visa.visa_customer_phone %}
                   <a href="https://wa.me/{{ visa.visa_customer_phone.replace('+', '').replace(' ', '') }}" target="_blank" class="ib" style="background:#25D366;color:white;" title="WhatsApp">💬</a>
                   {% endif %}
-                  <button onclick="editVisa({{ visa.id }})" class="ib" title="Edit">✏️</button>
+                  <button onclick="editVisa({{ visa.id }}, '{{ visa.visa_customer_name }}', '{{ visa.visa_reference }}', '{{ visa.visa_expiry_date }}', '{{ visa.visa_uid_no }}', '{{ visa.visa_passport_no }}', '{{ visa.visa_dob }}', '{{ visa.visa_customer_phone }}', '{{ visa.visa_contact_number_2 }}', '{{ visa.visa_vendor }}', '{{ visa.visa_third_party_agency }}', '{{ visa.visa_notes }}')" class="ib" title="Edit">✏️</button>
                   <a href="/visa-management/{{ visa.id }}/delete" class="ib ib-del" onclick="return confirm('Delete this visa record?')" title="Delete">🗑️</a>
                 </div>
               </td>
             </tr>
             {% else %}
-            <tr><td colspan="7" style="text-align:center;padding:40px;color:var(--text-muted);">No visas found. Close a Visit Visa task to add one automatically.</td></tr>
+            <tr><td colspan="12" style="text-align:center;padding:40px;color:var(--text-muted);">No visas found. Close a Visit Visa task or add manually.</td></tr>
             {% endfor %}
           </tbody>
         </table>
@@ -286,22 +310,66 @@
         <button class="modal-close" onclick="document.getElementById('addModal').style.display='none'">✕</button>
       </div>
       <form method="POST" action="/visa-management/add">
-        <div class="form-group">
-          <label>Customer Name <span style="color:#DC2626;">*</span></label>
-          <input type="text" name="customer_name" required>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+          <div class="form-group">
+            <label>Customer Name <span style="color:#DC2626;">*</span></label>
+            <input type="text" name="customer_name" required>
+          </div>
+          <div class="form-group">
+            <label>Reference</label>
+            <input type="text" name="reference" placeholder="Visa reference number">
+          </div>
         </div>
-        <div class="form-group">
-          <label>Phone Number <span style="color:#DC2626;">*</span></label>
-          <input type="text" name="customer_phone" placeholder="+971 XX XXX XXXX" required>
+        
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+          <div class="form-group">
+            <label>Visa Expiry Date <span style="color:#DC2626;">*</span></label>
+            <input type="date" name="expiry_date" required>
+          </div>
+          <div class="form-group">
+            <label>Date of Birth</label>
+            <input type="date" name="dob">
+          </div>
         </div>
-        <div class="form-group">
-          <label>Visa Expiry Date <span style="color:#DC2626;">*</span></label>
-          <input type="date" name="expiry_date" required>
+        
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+          <div class="form-group">
+            <label>UID Number</label>
+            <input type="text" name="uid_no" placeholder="UID/Emirates ID">
+          </div>
+          <div class="form-group">
+            <label>Passport Number</label>
+            <input type="text" name="passport_no" placeholder="Passport number">
+          </div>
         </div>
-        <div class="form-group">
-          <label>Third Party Agency</label>
-          <input type="text" name="agency" placeholder="Optional">
+        
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+          <div class="form-group">
+            <label>Contact Number 1 <span style="color:#DC2626;">*</span></label>
+            <input type="text" name="customer_phone" placeholder="+971 XX XXX XXXX" required>
+          </div>
+          <div class="form-group">
+            <label>Contact Number 2 <span style="color:#94A3B8;font-weight:400;">(Optional)</span></label>
+            <input type="text" name="contact_number_2" placeholder="+971 XX XXX XXXX">
+          </div>
         </div>
+        
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+          <div class="form-group">
+            <label>Vendor</label>
+            <input type="text" name="vendor" placeholder="Vendor/Agency name">
+          </div>
+          <div class="form-group">
+            <label>Third Party Agency</label>
+            <input type="text" name="agency" placeholder="Agency name (if applicable)">
+          </div>
+        </div>
+        
+        <div class="form-group">
+          <label>Notes</label>
+          <textarea name="notes" placeholder="Additional notes..." style="min-height:60px;"></textarea>
+        </div>
+        
         <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:20px;">
           <button type="button" class="btn-secondary" onclick="document.getElementById('addModal').style.display='none'">Cancel</button>
           <button type="submit" class="btn-primary">Add Visa</button>
@@ -318,22 +386,66 @@
         <button class="modal-close" onclick="document.getElementById('editModal').style.display='none'">✕</button>
       </div>
       <form method="POST" id="editForm">
-        <div class="form-group">
-          <label>Customer Name <span style="color:#DC2626;">*</span></label>
-          <input type="text" name="customer_name" id="editName" required>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+          <div class="form-group">
+            <label>Customer Name <span style="color:#DC2626;">*</span></label>
+            <input type="text" name="customer_name" id="editName" required>
+          </div>
+          <div class="form-group">
+            <label>Reference</label>
+            <input type="text" name="reference" id="editReference">
+          </div>
         </div>
-        <div class="form-group">
-          <label>Phone Number <span style="color:#DC2626;">*</span></label>
-          <input type="text" name="customer_phone" id="editPhone" required>
+        
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+          <div class="form-group">
+            <label>Visa Expiry Date <span style="color:#DC2626;">*</span></label>
+            <input type="date" name="expiry_date" id="editExpiry" required>
+          </div>
+          <div class="form-group">
+            <label>Date of Birth</label>
+            <input type="date" name="dob" id="editDOB">
+          </div>
         </div>
-        <div class="form-group">
-          <label>Visa Expiry Date <span style="color:#DC2626;">*</span></label>
-          <input type="date" name="expiry_date" id="editExpiry" required>
+        
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+          <div class="form-group">
+            <label>UID Number</label>
+            <input type="text" name="uid_no" id="editUID">
+          </div>
+          <div class="form-group">
+            <label>Passport Number</label>
+            <input type="text" name="passport_no" id="editPassport">
+          </div>
         </div>
-        <div class="form-group">
-          <label>Third Party Agency</label>
-          <input type="text" name="agency" id="editAgency">
+        
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+          <div class="form-group">
+            <label>Contact Number 1 <span style="color:#DC2626;">*</span></label>
+            <input type="text" name="customer_phone" id="editPhone" required>
+          </div>
+          <div class="form-group">
+            <label>Contact Number 2 <span style="color:#94A3B8;font-weight:400;">(Optional)</span></label>
+            <input type="text" name="contact_number_2" id="editPhone2">
+          </div>
         </div>
+        
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+          <div class="form-group">
+            <label>Vendor</label>
+            <input type="text" name="vendor" id="editVendor">
+          </div>
+          <div class="form-group">
+            <label>Third Party Agency</label>
+            <input type="text" name="agency" id="editAgency">
+          </div>
+        </div>
+        
+        <div class="form-group">
+          <label>Notes</label>
+          <textarea name="notes" id="editNotes" style="min-height:60px;"></textarea>
+        </div>
+        
         <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:20px;">
           <button type="button" class="btn-secondary" onclick="document.getElementById('editModal').style.display='none'">Cancel</button>
           <button type="submit" class="btn-primary">Save Changes</button>
@@ -343,12 +455,57 @@
   </div>
 
   <script>
-    function editVisa(id) {
-      // This would need to fetch visa data via AJAX in a real implementation
-      // For now, just show the modal
+    function editVisa(id, name, ref, expiry, uid, passport, dob, phone1, phone2, vendor, agency, notes) {
       document.getElementById('editForm').action = '/visa-management/' + id + '/edit';
+      document.getElementById('editName').value = name || '';
+      document.getElementById('editReference').value = ref || '';
+      document.getElementById('editExpiry').value = expiry || '';
+      document.getElementById('editUID').value = uid || '';
+      document.getElementById('editPassport').value = passport || '';
+      document.getElementById('editDOB').value = dob || '';
+      document.getElementById('editPhone').value = phone1 || '';
+      document.getElementById('editPhone2').value = phone2 || '';
+      document.getElementById('editVendor').value = vendor || '';
+      document.getElementById('editAgency').value = agency || '';
+      document.getElementById('editNotes').value = notes || '';
       document.getElementById('editModal').style.display = 'flex';
     }
   </script>
+
+  <!-- Import Visa Modal -->
+  <div id="importModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-head">
+        <div class="modal-title">⬆ Import Visas from Excel</div>
+        <button class="modal-close" onclick="document.getElementById('importModal').style.display='none'">✕</button>
+      </div>
+      <div style="padding:24px;">
+        <div style="background:#FEF3C7;border:1px solid #FCD34D;border-radius:8px;padding:12px;margin-bottom:16px;">
+          <div style="font-size:12px;color:#92400E;font-weight:600;margin-bottom:4px;">📋 Instructions:</div>
+          <div style="font-size:11px;color:#78716C;">
+            1. Download the template below<br>
+            2. Fill in your visa data (do not change column headers)<br>
+            3. Save and upload the Excel file
+          </div>
+        </div>
+        
+        <a href="/visa-management/template" style="display:inline-flex;align-items:center;gap:8px;padding:10px 20px;background:linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%);color:white;border-radius:10px;text-decoration:none;font-weight:600;font-size:14px;margin-bottom:20px;">
+          <span>⬇</span>
+          <span>Download Template</span>
+        </a>
+        
+        <form method="POST" action="/visa-management/import" enctype="multipart/form-data" style="margin-top:20px;">
+          <div class="form-group">
+            <label>Select Excel File (.xlsx) <span style="color:#DC2626;">*</span></label>
+            <input type="file" name="file" accept=".xlsx" required style="padding:10px;border:2px dashed #E2E8F0;border-radius:8px;background:#F8FAFC;">
+          </div>
+          <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:20px;">
+            <button type="button" class="btn-secondary" onclick="document.getElementById('importModal').style.display='none'">Cancel</button>
+            <button type="submit" class="btn-primary">Import Visas</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
 </body>
 </html>

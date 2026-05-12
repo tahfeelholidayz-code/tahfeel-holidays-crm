@@ -100,6 +100,18 @@
 
     </div>
 
+    <!-- Visa Expiry -->
+    <div style="background:white;border-radius:12px;border:0.5px solid #E2E8F0;border-top:6px solid #3B82F6;padding:10px 20px;margin-bottom:14px;box-shadow:0 4px 12px rgba(0,0,0,0.06);display:flex;align-items:center;justify-content:space-between;gap:16px;">
+      <div style="font-size:12px;font-weight:700;color:#64748B;text-transform:uppercase;letter-spacing:0.5px;white-space:nowrap;">Visa Expiry</div>
+      <div style="display:flex;gap:28px;align-items:center;flex:1;justify-content:center;">
+        <a href="/visa-management" style="text-decoration:none;text-align:center;"><div style="font-size:20px;font-weight:700;color:#1A3B8B;">{{ total_visas }}</div><div style="font-size:10px;color:#94A3B8;">Total</div></a>
+        <a href="/visa-management?filter=expiring" style="text-decoration:none;text-align:center;"><div style="font-size:20px;font-weight:700;color:#EF4444;">{{ visas_30 }}</div><div style="font-size:10px;color:#94A3B8;">≤30 Days</div></a>
+        <a href="/visa-management" style="text-decoration:none;text-align:center;"><div style="font-size:20px;font-weight:700;color:#F59E0B;">{{ visas_60 }}</div><div style="font-size:10px;color:#94A3B8;">31–60 Days</div></a>
+        <a href="/visa-management" style="text-decoration:none;text-align:center;"><div style="font-size:20px;font-weight:700;color:#475569;">{{ visas_90 }}</div><div style="font-size:10px;color:#94A3B8;">61–90 Days</div></a>
+      </div>
+      <a href="/visa-management" style="font-size:11px;color:#1A3B8B;text-decoration:none;font-weight:600;white-space:nowrap;">View all →</a>
+    </div>
+
     <!-- Pending Finance Approval -->
     <div class="card card-pending-finance" style="margin-bottom:14px;">
       <div class="card-header">

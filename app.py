@@ -503,6 +503,14 @@ class Job(db.Model):
     visa_customer_name = db.Column(db.String(200), nullable=True)
     visa_customer_phone = db.Column(db.String(50), nullable=True)
     visa_third_party_agency = db.Column(db.String(200), nullable=True)
+    # Expanded visa fields
+    visa_reference = db.Column(db.String(100), nullable=True)
+    visa_uid_no = db.Column(db.String(100), nullable=True)
+    visa_passport_no = db.Column(db.String(100), nullable=True)
+    visa_dob = db.Column(db.Date, nullable=True)
+    visa_contact_number_2 = db.Column(db.String(50), nullable=True)
+    visa_vendor = db.Column(db.String(200), nullable=True)
+    visa_notes = db.Column(db.Text, nullable=True)
     # Partner commission fields
     partner_commission_expected = db.Column(db.Boolean, default=False)
     partner_name = db.Column(db.String(100))
@@ -946,6 +954,18 @@ def dashboard():
             total_docs = len(all_docs)
         except:
             docs_30 = docs_60 = docs_90 = total_docs = 0
+        
+        # Visa expiry stats
+        try:
+            all_visas = Job.query.filter(Job.visa_expiry_date.isnot(None)).all()
+            today = now.date()
+            visas_30 = len([v for v in all_visas if v.visa_expiry_date and 0 <= (v.visa_expiry_date - today).days <= 30])
+            visas_60 = len([v for v in all_visas if v.visa_expiry_date and 30 < (v.visa_expiry_date - today).days <= 60])
+            visas_90 = len([v for v in all_visas if v.visa_expiry_date and 60 < (v.visa_expiry_date - today).days <= 90])
+            total_visas = len(all_visas)
+        except:
+            visas_30 = visas_60 = visas_90 = total_visas = 0
+        
         all_active_jobs = Job.query.filter(Job.status.notin_(['Closed'])).all()
         tasks_active = len([j for j in all_active_jobs if j.status not in ['Assigned','Processing','Closed']])
         tasks_overdue = len([j for j in all_active_jobs if j.due_date and j.due_date < now and j.status not in ['Closed','Done']])
@@ -955,6 +975,7 @@ def dashboard():
                                now=now,
                                date_filter=date_filter,
                                docs_30=docs_30, docs_60=docs_60, docs_90=docs_90, total_docs=total_docs,
+                               visas_30=visas_30, visas_60=visas_60, visas_90=visas_90, total_visas=total_visas,
                                all_jobs=active_jobs,
                                pending_approval=pending_approval,
                                pending_close=pending_close,
@@ -1163,6 +1184,18 @@ def dashboard():
             total_docs = len(all_docs)
         except:
             docs_30 = docs_60 = docs_90 = total_docs = 0
+        
+        # Visa expiry stats
+        try:
+            all_visas = Job.query.filter(Job.visa_expiry_date.isnot(None)).all()
+            today = now.date()
+            visas_30 = len([v for v in all_visas if v.visa_expiry_date and 0 <= (v.visa_expiry_date - today).days <= 30])
+            visas_60 = len([v for v in all_visas if v.visa_expiry_date and 30 < (v.visa_expiry_date - today).days <= 60])
+            visas_90 = len([v for v in all_visas if v.visa_expiry_date and 60 < (v.visa_expiry_date - today).days <= 90])
+            total_visas = len(all_visas)
+        except:
+            visas_30 = visas_60 = visas_90 = total_visas = 0
+        
         # Birthdays today
         try:
             today = now.date()
@@ -1191,6 +1224,7 @@ def dashboard():
                                total_monthly_target=total_monthly_target,
                                staff_stats=staff_stats,
                                docs_30=docs_30, docs_60=docs_60, docs_90=docs_90, total_docs=total_docs,
+                               visas_30=visas_30, visas_60=visas_60, visas_90=visas_90, total_visas=total_visas,
                                now=now, date_filter=date_filter,
                                from_date=from_date, to_date=to_date)
 
@@ -1244,6 +1278,18 @@ def dashboard():
         total_docs = len(all_docs)
     except:
         docs_30 = docs_60 = docs_90 = total_docs = 0
+    
+    # Visa expiry stats
+    try:
+        all_visas = Job.query.filter(Job.visa_expiry_date.isnot(None)).all()
+        today = now.date()
+        visas_30 = len([v for v in all_visas if v.visa_expiry_date and 0 <= (v.visa_expiry_date - today).days <= 30])
+        visas_60 = len([v for v in all_visas if v.visa_expiry_date and 30 < (v.visa_expiry_date - today).days <= 60])
+        visas_90 = len([v for v in all_visas if v.visa_expiry_date and 60 < (v.visa_expiry_date - today).days <= 90])
+        total_visas = len(all_visas)
+    except:
+        visas_30 = visas_60 = visas_90 = total_visas = 0
+    
     try:
         today_date = now.date()
         all_customers_bday = Customer.query.filter(Customer.date_of_birth != None).all()
@@ -1260,6 +1306,7 @@ def dashboard():
                            completed_value=completed_value,
                            total_revenue=total_revenue,
                            docs_30=docs_30, docs_60=docs_60, docs_90=docs_90, total_docs=total_docs,
+                           visas_30=visas_30, visas_60=visas_60, visas_90=visas_90, total_visas=total_visas,
                            pending_approval_jobs=pending_approval_jobs,
                            followups=followups, now=now, period=period)
 
@@ -5257,11 +5304,23 @@ def add_visa_manually():
         job.status = 'Done'
         job.created_by = session['user_id']
         
-        # Visa fields
+        # All visa fields
         job.visa_customer_name = request.form.get('customer_name')
-        job.visa_customer_phone = request.form.get('customer_phone')
+        job.visa_reference = request.form.get('reference')
         job.visa_expiry_date = datetime.strptime(request.form.get('expiry_date'), '%Y-%m-%d').date()
+        job.visa_uid_no = request.form.get('uid_no')
+        job.visa_passport_no = request.form.get('passport_no')
+        
+        # Date of birth
+        dob = request.form.get('dob')
+        if dob:
+            job.visa_dob = datetime.strptime(dob, '%Y-%m-%d').date()
+        
+        job.visa_customer_phone = request.form.get('customer_phone')
+        job.visa_contact_number_2 = request.form.get('contact_number_2')
+        job.visa_vendor = request.form.get('vendor')
         job.visa_third_party_agency = request.form.get('agency')
+        job.visa_notes = request.form.get('notes')
         
         db.session.add(job)
         db.session.commit()
@@ -5280,10 +5339,25 @@ def edit_visa(job_id):
     try:
         job = Job.query.get_or_404(job_id)
         
+        # Update all visa fields
         job.visa_customer_name = request.form.get('customer_name')
-        job.visa_customer_phone = request.form.get('customer_phone')
+        job.visa_reference = request.form.get('reference')
         job.visa_expiry_date = datetime.strptime(request.form.get('expiry_date'), '%Y-%m-%d').date()
+        job.visa_uid_no = request.form.get('uid_no')
+        job.visa_passport_no = request.form.get('passport_no')
+        
+        # Date of birth
+        dob = request.form.get('dob')
+        if dob:
+            job.visa_dob = datetime.strptime(dob, '%Y-%m-%d').date()
+        else:
+            job.visa_dob = None
+        
+        job.visa_customer_phone = request.form.get('customer_phone')
+        job.visa_contact_number_2 = request.form.get('contact_number_2')
+        job.visa_vendor = request.form.get('vendor')
         job.visa_third_party_agency = request.form.get('agency')
+        job.visa_notes = request.form.get('notes')
         
         db.session.commit()
         flash('Visa details updated')
@@ -5300,18 +5374,301 @@ def delete_visa(job_id):
     try:
         job = Job.query.get_or_404(job_id)
         
-        # Just clear the visa fields instead of deleting the job
+        # Just clear all visa fields instead of deleting the job
         customer_name = job.visa_customer_name
         job.visa_expiry_date = None
         job.visa_customer_name = None
         job.visa_customer_phone = None
         job.visa_third_party_agency = None
+        job.visa_reference = None
+        job.visa_uid_no = None
+        job.visa_passport_no = None
+        job.visa_dob = None
+        job.visa_contact_number_2 = None
+        job.visa_vendor = None
+        job.visa_notes = None
         
         db.session.commit()
         flash(f'Visa record for {customer_name} removed')
     except Exception as e:
         db.session.rollback()
         flash(f'Error deleting visa: {str(e)}', 'error')
+    
+    return redirect(url_for('visa_management'))
+
+@app.route('/visa-management/export')
+@login_required
+def export_visas():
+    """Export all visas to Excel"""
+    try:
+        import openpyxl
+        from openpyxl.styles import Font, PatternFill, Alignment
+        
+        # Get all visas
+        visas = Job.query.filter(Job.visa_expiry_date.isnot(None)).order_by(Job.visa_expiry_date.asc()).all()
+        
+        # Create workbook
+        wb = openpyxl.Workbook()
+        ws = wb.active
+        ws.title = "Visas"
+        
+        # Headers
+        headers = ['Customer Name', 'Reference', 'Expiry Date', 'Days Remaining', 'UID Number', 
+                   'Passport Number', 'Date of Birth', 'Contact Number 1', 'Contact Number 2', 
+                   'Vendor', 'Third Party Agency', 'Notes', 'Status']
+        ws.append(headers)
+        
+        # Style headers
+        header_fill = PatternFill(start_color='0EA5E9', end_color='0EA5E9', fill_type='solid')
+        header_font = Font(bold=True, color='FFFFFF')
+        for cell in ws[1]:
+            cell.fill = header_fill
+            cell.font = header_font
+            cell.alignment = Alignment(horizontal='center', vertical='center')
+        
+        # Add data
+        today = datetime.now().date()
+        for visa in visas:
+            days_remaining = (visa.visa_expiry_date - today).days if visa.visa_expiry_date else 0
+            
+            # Determine status
+            if days_remaining < 0:
+                status = 'Expired'
+            elif days_remaining <= 30:
+                status = 'Expiring Soon'
+            else:
+                status = 'Active'
+            
+            ws.append([
+                visa.visa_customer_name or '',
+                visa.visa_reference or '',
+                visa.visa_expiry_date.strftime('%d/%m/%Y') if visa.visa_expiry_date else '',
+                days_remaining,
+                visa.visa_uid_no or '',
+                visa.visa_passport_no or '',
+                visa.visa_dob.strftime('%d/%m/%Y') if visa.visa_dob else '',
+                visa.visa_customer_phone or '',
+                visa.visa_contact_number_2 or '',
+                visa.visa_vendor or '',
+                visa.visa_third_party_agency or '',
+                visa.visa_notes or '',
+                status
+            ])
+        
+        # Auto-size columns
+        for column in ws.columns:
+            max_length = 0
+            column_letter = column[0].column_letter
+            for cell in column:
+                try:
+                    if len(str(cell.value)) > max_length:
+                        max_length = len(cell.value)
+                except:
+                    pass
+            adjusted_width = min(max_length + 2, 50)
+            ws.column_dimensions[column_letter].width = adjusted_width
+        
+        # Save to BytesIO
+        from io import BytesIO
+        output = BytesIO()
+        wb.save(output)
+        output.seek(0)
+        
+        return send_file(
+            output,
+            mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            as_attachment=True,
+            download_name=f'visas_export_{datetime.now().strftime("%Y%m%d_%H%M%S")}.xlsx'
+        )
+    except Exception as e:
+        flash(f'Error exporting visas: {str(e)}', 'error')
+        return redirect(url_for('visa_management'))
+
+@app.route('/visa-management/template')
+@login_required
+def visa_template():
+    """Download Excel template for importing visas"""
+    try:
+        import openpyxl
+        from openpyxl.styles import Font, PatternFill, Alignment
+        
+        wb = openpyxl.Workbook()
+        ws = wb.active
+        ws.title = "Visa Template"
+        
+        # Headers with instructions
+        headers = ['Customer Name*', 'Reference', 'Expiry Date* (DD/MM/YYYY)', 'UID Number', 
+                   'Passport Number', 'Date of Birth (DD/MM/YYYY)', 'Contact Number 1*', 
+                   'Contact Number 2', 'Vendor', 'Third Party Agency', 'Notes']
+        ws.append(headers)
+        
+        # Style headers
+        header_fill = PatternFill(start_color='8B5CF6', end_color='8B5CF6', fill_type='solid')
+        header_font = Font(bold=True, color='FFFFFF')
+        for cell in ws[1]:
+            cell.fill = header_fill
+            cell.font = header_font
+            cell.alignment = Alignment(horizontal='center', vertical='center', wrap_text=True)
+        
+        # Add example row
+        ws.append([
+            'John Doe',
+            'VISA123456',
+            '31/12/2025',
+            '784-1234-5678901-2',
+            'AB1234567',
+            '01/01/1990',
+            '+971 50 123 4567',
+            '+971 55 987 6543',
+            'ABC Visa Services',
+            'XYZ Agency',
+            'VIP customer - handle with care'
+        ])
+        
+        # Auto-size columns
+        for column in ws.columns:
+            max_length = 0
+            column_letter = column[0].column_letter
+            for cell in column:
+                try:
+                    if len(str(cell.value)) > max_length:
+                        max_length = len(cell.value)
+                except:
+                    pass
+            adjusted_width = min(max_length + 2, 50)
+            ws.column_dimensions[column_letter].width = adjusted_width
+        
+        # Save to BytesIO
+        from io import BytesIO
+        output = BytesIO()
+        wb.save(output)
+        output.seek(0)
+        
+        return send_file(
+            output,
+            mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            as_attachment=True,
+            download_name='visa_import_template.xlsx'
+        )
+    except Exception as e:
+        flash(f'Error generating template: {str(e)}', 'error')
+        return redirect(url_for('visa_management'))
+
+@app.route('/visa-management/import', methods=['POST'])
+@login_required
+def import_visas():
+    """Import visas from Excel file"""
+    try:
+        import openpyxl
+        from werkzeug.utils import secure_filename
+        
+        if 'file' not in request.files:
+            flash('No file uploaded', 'error')
+            return redirect(url_for('visa_management'))
+        
+        file = request.files['file']
+        if file.filename == '':
+            flash('No file selected', 'error')
+            return redirect(url_for('visa_management'))
+        
+        if not file.filename.endswith('.xlsx'):
+            flash('Please upload an Excel file (.xlsx)', 'error')
+            return redirect(url_for('visa_management'))
+        
+        # Read Excel file
+        wb = openpyxl.load_workbook(file)
+        ws = wb.active
+        
+        success_count = 0
+        error_count = 0
+        errors = []
+        
+        # Skip header row
+        for row_num, row in enumerate(ws.iter_rows(min_row=2, values_only=True), start=2):
+            try:
+                # Skip empty rows
+                if not any(row):
+                    continue
+                
+                customer_name, reference, expiry_str, uid, passport, dob_str, phone1, phone2, vendor, agency, notes = row[:11]
+                
+                # Validate required fields
+                if not customer_name:
+                    errors.append(f'Row {row_num}: Customer name is required')
+                    error_count += 1
+                    continue
+                
+                if not expiry_str:
+                    errors.append(f'Row {row_num}: Expiry date is required')
+                    error_count += 1
+                    continue
+                
+                if not phone1:
+                    errors.append(f'Row {row_num}: Contact number 1 is required')
+                    error_count += 1
+                    continue
+                
+                # Parse dates
+                try:
+                    if isinstance(expiry_str, str):
+                        expiry_date = datetime.strptime(expiry_str, '%d/%m/%Y').date()
+                    else:
+                        expiry_date = expiry_str
+                except:
+                    errors.append(f'Row {row_num}: Invalid expiry date format (use DD/MM/YYYY)')
+                    error_count += 1
+                    continue
+                
+                dob = None
+                if dob_str:
+                    try:
+                        if isinstance(dob_str, str):
+                            dob = datetime.strptime(dob_str, '%d/%m/%Y').date()
+                        else:
+                            dob = dob_str
+                    except:
+                        errors.append(f'Row {row_num}: Invalid DOB format (use DD/MM/YYYY)')
+                        error_count += 1
+                        continue
+                
+                # Create job entry
+                job = Job()
+                job.customer_id = 1  # Dummy
+                job.job_type = 'Manual Visa Entry'
+                job.assigned_to = session['user_id']
+                job.status = 'Done'
+                job.created_by = session['user_id']
+                
+                job.visa_customer_name = customer_name
+                job.visa_reference = reference
+                job.visa_expiry_date = expiry_date
+                job.visa_uid_no = uid
+                job.visa_passport_no = passport
+                job.visa_dob = dob
+                job.visa_customer_phone = phone1
+                job.visa_contact_number_2 = phone2
+                job.visa_vendor = vendor
+                job.visa_third_party_agency = agency
+                job.visa_notes = notes
+                
+                db.session.add(job)
+                success_count += 1
+                
+            except Exception as e:
+                errors.append(f'Row {row_num}: {str(e)}')
+                error_count += 1
+        
+        db.session.commit()
+        
+        # Flash results
+        if success_count > 0:
+            flash(f'Successfully imported {success_count} visa(s)')
+        if error_count > 0:
+            flash(f'{error_count} row(s) failed. Errors: {"; ".join(errors[:5])}', 'error')
+        
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error importing file: {str(e)}', 'error')
     
     return redirect(url_for('visa_management'))
 
