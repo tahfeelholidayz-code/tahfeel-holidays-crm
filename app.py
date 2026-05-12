@@ -511,6 +511,7 @@ class Job(db.Model):
     visa_contact_number_2 = db.Column(db.String(50), nullable=True)
     visa_vendor = db.Column(db.String(200), nullable=True)
     visa_notes = db.Column(db.Text, nullable=True)
+    visa_closed = db.Column(db.Boolean, default=False, nullable=True)
     # Partner commission fields
     partner_commission_expected = db.Column(db.Boolean, default=False)
     partner_name = db.Column(db.String(100))
@@ -5376,8 +5377,11 @@ def visa_management():
     filter_type = request.args.get('filter', 'all')
     agency = request.args.get('agency')
     
-    # Base query - all jobs with visa expiry date
-    query = Job.query.filter(Job.visa_expiry_date.isnot(None))
+    # Base query - all jobs with visa expiry date, exclude closed by default
+    if filter_type == 'closed':
+        query = Job.query.filter(Job.visa_expiry_date.isnot(None), Job.visa_closed == True)
+    else:
+        query = Job.query.filter(Job.visa_expiry_date.isnot(None), db.or_(Job.visa_closed == False, Job.visa_closed == None))
     
     # Apply filters
     today = datetime.now().date()
@@ -5524,12 +5528,56 @@ def delete_visa(job_id):
         job.visa_contact_number_2 = None
         job.visa_vendor = None
         job.visa_notes = None
+        job.visa_closed = None
         
         db.session.commit()
         flash(f'Visa record for {customer_name} removed')
     except Exception as e:
         db.session.rollback()
         flash(f'Error deleting visa: {str(e)}', 'error')
+    
+    return redirect(url_for('visa_management'))
+
+@app.route('/visa-management/<int:job_id>/renew', methods=['POST'])
+@login_required
+def renew_visa(job_id):
+    """Renew a visa with new expiry date and optionally new UID"""
+    try:
+        job = Job.query.get_or_404(job_id)
+        
+        new_expiry = request.form.get('new_expiry_date')
+        new_uid = request.form.get('new_uid_no')
+        
+        if new_expiry:
+            job.visa_expiry_date = datetime.strptime(new_expiry, '%Y-%m-%d').date()
+        
+        if new_uid:
+            job.visa_uid_no = new_uid
+        
+        # Mark as not closed when renewed
+        job.visa_closed = False
+        
+        db.session.commit()
+        flash(f'Visa renewed for {job.visa_customer_name}. New expiry: {job.visa_expiry_date.strftime("%d %b %Y")}')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error renewing visa: {str(e)}', 'error')
+    
+    return redirect(url_for('visa_management'))
+
+@app.route('/visa-management/<int:job_id>/close')
+@login_required
+def close_visa(job_id):
+    """Close a visa - mark as closed"""
+    try:
+        job = Job.query.get_or_404(job_id)
+        job.visa_closed = True
+        
+        db.session.commit()
+        flash(f'Visa for {job.visa_customer_name} closed')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error closing visa: {str(e)}', 'error')
     
     return redirect(url_for('visa_management'))
 

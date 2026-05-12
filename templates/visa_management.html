@@ -207,6 +207,7 @@
         <a href="/visa-management" class="filter-btn {% if not filter_type or filter_type == 'all' %}active{% endif %}">All Visas</a>
         <a href="/visa-management?filter=expiring" class="filter-btn {% if filter_type == 'expiring' %}active{% endif %}">Expiring Soon</a>
         <a href="/visa-management?filter=expired" class="filter-btn {% if filter_type == 'expired' %}active{% endif %}">Expired</a>
+        <a href="/visa-management?filter=closed" class="filter-btn {% if filter_type == 'closed' %}active{% endif %}">Closed</a>
         
         <div style="flex:1;"></div>
         
@@ -231,11 +232,7 @@
               <th>Reference</th>
               <th>Expiry Date</th>
               <th>Days Left</th>
-              <th>UID No</th>
-              <th>Passport</th>
-              <th>DOB</th>
-              <th>Contact 1</th>
-              <th>Contact 2</th>
+              <th>Contact</th>
               <th>Vendor</th>
               <th>Status</th>
               <th>Actions</th>
@@ -246,9 +243,6 @@
             <tr>
               <td>
                 <div style="font-weight:600;color:var(--text-primary);">{{ visa.visa_customer_name or 'N/A' }}</div>
-                {% if visa.visa_notes %}
-                <div style="font-size:10px;color:var(--text-muted);margin-top:2px;" title="{{ visa.visa_notes }}">📝 {{ visa.visa_notes[:30] }}...</div>
-                {% endif %}
               </td>
               <td>{{ visa.visa_reference or '—' }}</td>
               <td>
@@ -263,17 +257,7 @@
                 <span style="color:#10B981;">{{ visa.days_remaining }} days</span>
                 {% endif %}
               </td>
-              <td>{{ visa.visa_uid_no or '—' }}</td>
-              <td>{{ visa.visa_passport_no or '—' }}</td>
-              <td>{{ visa.visa_dob.strftime('%d %b %Y') if visa.visa_dob else '—' }}</td>
-              <td>
-                {% if visa.visa_customer_phone %}
-                <div style="font-size:13px;">{{ visa.visa_customer_phone }}</div>
-                {% else %}
-                <span style="color:#94A3B8;">—</span>
-                {% endif %}
-              </td>
-              <td>{{ visa.visa_contact_number_2 or '—' }}</td>
+              <td>{{ visa.visa_customer_phone or '—' }}</td>
               <td>{{ visa.visa_vendor or '—' }}</td>
               <td>
                 <span class="status-badge status-{{ visa.status }}">
@@ -285,16 +269,15 @@
               </td>
               <td>
                 <div style="display:flex;gap:5px;">
+                  <button onclick="viewVisa({{ visa.id }}, '{{ visa.visa_customer_name }}', '{{ visa.visa_reference }}', '{{ visa.visa_expiry_date }}', '{{ visa.visa_uid_no }}', '{{ visa.visa_passport_no }}', '{{ visa.visa_dob }}', '{{ visa.visa_customer_phone }}', '{{ visa.visa_contact_number_2 }}', '{{ visa.visa_vendor }}', '{{ visa.visa_third_party_agency }}', '{{ visa.visa_notes }}')" class="ib" style="background:#0EA5E9;color:white;" title="View Details">👁️</button>
                   {% if visa.visa_customer_phone %}
                   <a href="https://wa.me/{{ visa.visa_customer_phone.replace('+', '').replace(' ', '') }}" target="_blank" class="ib" style="background:#25D366;color:white;" title="WhatsApp">💬</a>
                   {% endif %}
-                  <button onclick="editVisa({{ visa.id }}, '{{ visa.visa_customer_name }}', '{{ visa.visa_reference }}', '{{ visa.visa_expiry_date }}', '{{ visa.visa_uid_no }}', '{{ visa.visa_passport_no }}', '{{ visa.visa_dob }}', '{{ visa.visa_customer_phone }}', '{{ visa.visa_contact_number_2 }}', '{{ visa.visa_vendor }}', '{{ visa.visa_third_party_agency }}', '{{ visa.visa_notes }}')" class="ib" title="Edit">✏️</button>
-                  <a href="/visa-management/{{ visa.id }}/delete" class="ib ib-del" onclick="return confirm('Delete this visa record?')" title="Delete">🗑️</a>
                 </div>
               </td>
             </tr>
             {% else %}
-            <tr><td colspan="12" style="text-align:center;padding:40px;color:var(--text-muted);">No visas found. Close a Visit Visa task or add manually.</td></tr>
+            <tr><td colspan="8" style="text-align:center;padding:40px;color:var(--text-muted);">No visas found. Close a Visit Visa task or add manually.</td></tr>
             {% endfor %}
           </tbody>
         </table>
@@ -378,97 +361,120 @@
     </div>
   </div>
 
-  <!-- Edit Visa Modal -->
-  <div id="editModal" class="modal">
-    <div class="modal-content">
+  <!-- View Details Modal -->
+  <div id="viewModal" class="modal">
+    <div class="modal-content" style="max-width:700px;">
       <div class="modal-head">
-        <div class="modal-title">✏️ Edit Visa Details</div>
-        <button class="modal-close" onclick="document.getElementById('editModal').style.display='none'">✕</button>
+        <div class="modal-title">👁️ Visa Details</div>
+        <button class="modal-close" onclick="document.getElementById('viewModal').style.display='none'">✕</button>
       </div>
-      <form method="POST" id="editForm">
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
-          <div class="form-group">
-            <label>Customer Name <span style="color:#DC2626;">*</span></label>
-            <input type="text" name="customer_name" id="editName" required>
-          </div>
-          <div class="form-group">
-            <label>Reference</label>
-            <input type="text" name="reference" id="editReference">
-          </div>
-        </div>
-        
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
-          <div class="form-group">
-            <label>Visa Expiry Date <span style="color:#DC2626;">*</span></label>
-            <input type="date" name="expiry_date" id="editExpiry" required>
-          </div>
-          <div class="form-group">
-            <label>Date of Birth</label>
-            <input type="date" name="dob" id="editDOB">
+      <div style="padding:24px;">
+        <!-- Customer Info -->
+        <div style="background:#F8FAFC;border-radius:8px;padding:16px;margin-bottom:20px;">
+          <div style="font-size:18px;font-weight:700;color:#0F172A;margin-bottom:8px;" id="viewCustomerName"></div>
+          <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:12px;font-size:13px;">
+            <div><span style="color:#64748B;">Reference:</span> <span id="viewReference" style="font-weight:600;"></span></div>
+            <div><span style="color:#64748B;">Vendor:</span> <span id="viewVendor" style="font-weight:600;"></span></div>
+            <div><span style="color:#64748B;">Expiry Date:</span> <span id="viewExpiry" style="font-weight:600;color:#DC2626;"></span></div>
+            <div><span style="color:#64748B;">Agency:</span> <span id="viewAgency" style="font-weight:600;"></span></div>
           </div>
         </div>
-        
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
-          <div class="form-group">
-            <label>UID Number</label>
-            <input type="text" name="uid_no" id="editUID">
+
+        <!-- Personal Details -->
+        <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:16px;margin-bottom:20px;">
+          <div>
+            <div style="font-size:11px;color:#64748B;font-weight:600;margin-bottom:4px;">UID NUMBER</div>
+            <div id="viewUID" style="font-size:14px;color:#0F172A;"></div>
           </div>
-          <div class="form-group">
-            <label>Passport Number</label>
-            <input type="text" name="passport_no" id="editPassport">
+          <div>
+            <div style="font-size:11px;color:#64748B;font-weight:600;margin-bottom:4px;">PASSPORT</div>
+            <div id="viewPassport" style="font-size:14px;color:#0F172A;"></div>
           </div>
-        </div>
-        
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
-          <div class="form-group">
-            <label>Contact Number 1 <span style="color:#DC2626;">*</span></label>
-            <input type="text" name="customer_phone" id="editPhone" required>
+          <div>
+            <div style="font-size:11px;color:#64748B;font-weight:600;margin-bottom:4px;">DATE OF BIRTH</div>
+            <div id="viewDOB" style="font-size:14px;color:#0F172A;"></div>
           </div>
-          <div class="form-group">
-            <label>Contact Number 2 <span style="color:#94A3B8;font-weight:400;">(Optional)</span></label>
-            <input type="text" name="contact_number_2" id="editPhone2">
+          <div>
+            <div style="font-size:11px;color:#64748B;font-weight:600;margin-bottom:4px;">CONTACT 1</div>
+            <div id="viewPhone1" style="font-size:14px;color:#0F172A;"></div>
           </div>
-        </div>
-        
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
-          <div class="form-group">
-            <label>Vendor</label>
-            <input type="text" name="vendor" id="editVendor">
-          </div>
-          <div class="form-group">
-            <label>Third Party Agency</label>
-            <input type="text" name="agency" id="editAgency">
+          <div>
+            <div style="font-size:11px;color:#64748B;font-weight:600;margin-bottom:4px;">CONTACT 2</div>
+            <div id="viewPhone2" style="font-size:14px;color:#0F172A;"></div>
           </div>
         </div>
-        
+
+        <!-- Notes -->
+        <div style="margin-bottom:20px;">
+          <div style="font-size:11px;color:#64748B;font-weight:600;margin-bottom:4px;">NOTES</div>
+          <div id="viewNotes" style="font-size:13px;color:#475569;background:#F8FAFC;padding:12px;border-radius:6px;min-height:60px;"></div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div style="display:flex;gap:12px;justify-content:flex-end;border-top:1px solid #E2E8F0;padding-top:20px;">
+          <button onclick="closeVisa()" style="padding:10px 20px;background:#EF4444;color:white;border:none;border-radius:8px;font-weight:600;cursor:pointer;">🔴 Close Visa</button>
+          <button onclick="showRenewForm()" style="padding:10px 20px;background:#10B981;color:white;border:none;border-radius:8px;font-weight:600;cursor:pointer;">🔄 Renew Visa</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Renew Visa Modal -->
+  <div id="renewModal" class="modal">
+    <div class="modal-content" style="max-width:500px;">
+      <div class="modal-head">
+        <div class="modal-title">🔄 Renew Visa</div>
+        <button class="modal-close" onclick="document.getElementById('renewModal').style.display='none'">✕</button>
+      </div>
+      <form method="POST" id="renewForm" style="padding:24px;">
         <div class="form-group">
-          <label>Notes</label>
-          <textarea name="notes" id="editNotes" style="min-height:60px;"></textarea>
+          <label>New Expiry Date <span style="color:#DC2626;">*</span></label>
+          <input type="date" name="new_expiry_date" required>
         </div>
-        
-        <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:20px;">
-          <button type="button" class="btn-secondary" onclick="document.getElementById('editModal').style.display='none'">Cancel</button>
-          <button type="submit" class="btn-primary">Save Changes</button>
+        <div class="form-group">
+          <label>New UID Number <span style="color:#94A3B8;font-weight:400;">(Optional)</span></label>
+          <input type="text" name="new_uid_no" placeholder="New UID if changed">
+        </div>
+        <div style="background:#FEF3C7;border:1px solid #FCD34D;border-radius:8px;padding:12px;margin-bottom:16px;">
+          <div style="font-size:12px;color:#92400E;">This will update the visa expiry date and optionally the UID number. All other details remain the same.</div>
+        </div>
+        <div style="display:flex;gap:10px;justify-content:flex-end;">
+          <button type="button" class="btn-secondary" onclick="document.getElementById('renewModal').style.display='none'">Cancel</button>
+          <button type="submit" class="btn-primary">Renew Visa</button>
         </div>
       </form>
     </div>
   </div>
 
   <script>
-    function editVisa(id, name, ref, expiry, uid, passport, dob, phone1, phone2, vendor, agency, notes) {
-      document.getElementById('editForm').action = '/visa-management/' + id + '/edit';
-      document.getElementById('editName').value = name || '';
-      document.getElementById('editReference').value = ref || '';
-      document.getElementById('editExpiry').value = expiry || '';
-      document.getElementById('editUID').value = uid || '';
-      document.getElementById('editPassport').value = passport || '';
-      document.getElementById('editDOB').value = dob || '';
-      document.getElementById('editPhone').value = phone1 || '';
-      document.getElementById('editPhone2').value = phone2 || '';
-      document.getElementById('editVendor').value = vendor || '';
-      document.getElementById('editAgency').value = agency || '';
-      document.getElementById('editNotes').value = notes || '';
-      document.getElementById('editModal').style.display = 'flex';
+    let currentVisaId = null;
+
+    function viewVisa(id, name, ref, expiry, uid, passport, dob, phone1, phone2, vendor, agency, notes) {
+      currentVisaId = id;
+      document.getElementById('viewCustomerName').textContent = name || 'N/A';
+      document.getElementById('viewReference').textContent = ref || '—';
+      document.getElementById('viewExpiry').textContent = expiry || '—';
+      document.getElementById('viewUID').textContent = uid || '—';
+      document.getElementById('viewPassport').textContent = passport || '—';
+      document.getElementById('viewDOB').textContent = dob || '—';
+      document.getElementById('viewPhone1').textContent = phone1 || '—';
+      document.getElementById('viewPhone2').textContent = phone2 || '—';
+      document.getElementById('viewVendor').textContent = vendor || '—';
+      document.getElementById('viewAgency').textContent = agency || '—';
+      document.getElementById('viewNotes').textContent = notes || 'No notes';
+      document.getElementById('viewModal').style.display = 'flex';
+    }
+
+    function showRenewForm() {
+      document.getElementById('viewModal').style.display = 'none';
+      document.getElementById('renewForm').action = '/visa-management/' + currentVisaId + '/renew';
+      document.getElementById('renewModal').style.display = 'flex';
+    }
+
+    function closeVisa() {
+      if (confirm('Close this visa? It will be moved to Closed status and hidden from active list.')) {
+        window.location.href = '/visa-management/' + currentVisaId + '/close';
+      }
     }
   </script>
 
