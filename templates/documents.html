@@ -40,11 +40,26 @@
     </div>
 
     <!-- Summary cards -->
-    <div class="cards-4" style="margin-bottom:14px;">
-      <a href="/documents" class="sum-card"><div class="lbl">Total Docs</div><div class="val">{{ total_docs }}</div></a>
-      <a href="/documents?expiry=30" class="sum-card red"><div class="lbl">≤30 Days</div><div class="val">{{ expiring_30 }}</div></a>
-      <a href="/documents?expiry=60" class="sum-card amber"><div class="lbl">31–60 Days</div><div class="val">{{ expiring_60 }}</div></a>
-      <a href="/documents?expiry=90" class="sum-card" style="border-top-color:#4A5568;"><div class="lbl">61–90 Days</div><div class="val" style="color:#4A5568;">{{ expiring_90 }}</div></a>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:20px;">
+      <a href="/documents" style="background:white;border-radius:12px;padding:20px;text-decoration:none;border-top:4px solid #0EA5E9;box-shadow:0 2px 4px rgba(0,0,0,0.05);transition:all 0.2s;" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 4px 8px rgba(0,0,0,0.1)'" onmouseout="this.style.transform='translateY(0)';this.style.boxShadow='0 2px 4px rgba(0,0,0,0.05)'">
+        <div style="font-size:12px;color:#64748B;font-weight:600;margin-bottom:8px;">Total Docs</div>
+        <div style="font-size:32px;font-weight:700;color:#0F172A;">{{ total_docs }}</div>
+      </a>
+      
+      <a href="/documents?expiry=30" style="background:white;border-radius:12px;padding:20px;text-decoration:none;border-top:4px solid #DC2626;box-shadow:0 2px 4px rgba(0,0,0,0.05);transition:all 0.2s;" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 4px 8px rgba(0,0,0,0.1)'" onmouseout="this.style.transform='translateY(0)';this.style.boxShadow='0 2px 4px rgba(0,0,0,0.05)'">
+        <div style="font-size:12px;color:#64748B;font-weight:600;margin-bottom:8px;">≤30 Days</div>
+        <div style="font-size:32px;font-weight:700;color:#DC2626;">{{ expiring_30 }}</div>
+      </a>
+      
+      <a href="/documents?expiry=60" style="background:white;border-radius:12px;padding:20px;text-decoration:none;border-top:4px solid #F59E0B;box-shadow:0 2px 4px rgba(0,0,0,0.05);transition:all 0.2s;" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 4px 8px rgba(0,0,0,0.1)'" onmouseout="this.style.transform='translateY(0)';this.style.boxShadow='0 2px 4px rgba(0,0,0,0.05)'">
+        <div style="font-size:12px;color:#64748B;font-weight:600;margin-bottom:8px;">31–60 Days</div>
+        <div style="font-size:32px;font-weight:700;color:#F59E0B;">{{ expiring_60 }}</div>
+      </a>
+      
+      <a href="/documents?expiry=90" style="background:white;border-radius:12px;padding:20px;text-decoration:none;border-top:4px solid #64748B;box-shadow:0 2px 4px rgba(0,0,0,0.05);transition:all 0.2s;" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 4px 8px rgba(0,0,0,0.1)'" onmouseout="this.style.transform='translateY(0)';this.style.boxShadow='0 2px 4px rgba(0,0,0,0.05)'">
+        <div style="font-size:12px;color:#64748B;font-weight:600;margin-bottom:8px;">61–90 Days</div>
+        <div style="font-size:32px;font-weight:700;color:#64748B;">{{ expiring_90 }}</div>
+      </a>
     </div>
 
     <!-- Filters -->
