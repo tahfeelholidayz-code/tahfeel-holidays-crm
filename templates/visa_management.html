@@ -488,30 +488,38 @@
 
   <!-- Import Visa Modal -->
   <div id="importModal" class="modal">
-    <div class="modal-content">
+    <div class="modal-content" style="max-width:600px;">
       <div class="modal-head">
         <div class="modal-title">⬆ Import Visas from Excel</div>
         <button class="modal-close" onclick="document.getElementById('importModal').style.display='none'">✕</button>
       </div>
       <div style="padding:24px;">
-        <div style="background:#FEF3C7;border:1px solid #FCD34D;border-radius:8px;padding:12px;margin-bottom:16px;">
-          <div style="font-size:12px;color:#92400E;font-weight:600;margin-bottom:4px;">📋 Instructions:</div>
-          <div style="font-size:11px;color:#78716C;">
-            1. Download the template below<br>
+        <!-- Instructions -->
+        <div style="background:#FEF3C7;border:1px solid #FCD34D;border-radius:8px;padding:16px;margin-bottom:24px;">
+          <div style="font-size:13px;color:#92400E;font-weight:600;margin-bottom:8px;">📋 How to Import:</div>
+          <div style="font-size:12px;color:#78716C;line-height:1.6;">
+            1. Download the Excel template below<br>
             2. Fill in your visa data (do not change column headers)<br>
-            3. Save and upload the Excel file
+            3. Save the file and upload it below
           </div>
         </div>
         
-        <a href="/visa-management/template" style="display:inline-flex;align-items:center;gap:8px;padding:10px 20px;background:linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%);color:white;border-radius:10px;text-decoration:none;font-weight:600;font-size:14px;margin-bottom:20px;">
-          <span>⬇</span>
-          <span>Download Template</span>
-        </a>
+        <!-- Template Download Button -->
+        <div style="text-align:center;margin-bottom:24px;">
+          <a href="/visa-management/template" style="display:inline-flex;align-items:center;gap:8px;padding:12px 24px;background:linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%);color:white;border-radius:10px;text-decoration:none;font-weight:600;font-size:14px;box-shadow:0 4px 6px rgba(139, 92, 246, 0.2);transition:all 0.2s;" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 6px 12px rgba(139, 92, 246, 0.3)'" onmouseout="this.style.transform='translateY(0)';this.style.boxShadow='0 4px 6px rgba(139, 92, 246, 0.2)'">
+            <span style="font-size:18px;">⬇</span>
+            <span>Download Excel Template</span>
+          </a>
+        </div>
         
-        <form method="POST" action="/visa-management/import" enctype="multipart/form-data" style="margin-top:20px;">
-          <div class="form-group">
-            <label>Select Excel File (.xlsx) <span style="color:#DC2626;">*</span></label>
-            <input type="file" name="file" accept=".xlsx" required style="padding:10px;border:2px dashed #E2E8F0;border-radius:8px;background:#F8FAFC;">
+        <!-- Upload Form -->
+        <form method="POST" action="/visa-management/import" enctype="multipart/form-data">
+          <div style="border-top:1px solid #E2E8F0;padding-top:24px;">
+            <div class="form-group">
+              <label>Upload Filled Excel File <span style="color:#DC2626;">*</span></label>
+              <input type="file" name="file" accept=".xlsx" required style="padding:12px;border:2px dashed #E2E8F0;border-radius:8px;background:#F8FAFC;width:100%;">
+              <small style="color:var(--text-muted);margin-top:4px;display:block;">Only .xlsx files accepted</small>
+            </div>
           </div>
           <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:20px;">
             <button type="button" class="btn-secondary" onclick="document.getElementById('importModal').style.display='none'">Cancel</button>
