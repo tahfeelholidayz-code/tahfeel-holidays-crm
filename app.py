@@ -3799,6 +3799,165 @@ def export_documents():
     return send_file(buf, download_name='tahfeel_documents.xlsx', as_attachment=True,
                      mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
 
+@app.route('/documents/template')
+@login_required
+def documents_template():
+    """Download Excel template for importing documents"""
+    try:
+        import openpyxl
+        from openpyxl.styles import Font, PatternFill, Alignment
+        from io import BytesIO
+        
+        wb = openpyxl.Workbook()
+        ws = wb.active
+        ws.title = "Documents Template"
+        
+        # Headers
+        headers = ['Customer Name*', 'Company', 'Doc Type*', 'Belongs To', 'Owner Name', 
+                   'Expiry Date* (DD/MM/YYYY)', 'Notes']
+        ws.append(headers)
+        
+        # Style headers
+        header_fill = PatternFill(start_color='8B5CF6', end_color='8B5CF6', fill_type='solid')
+        header_font = Font(bold=True, color='FFFFFF')
+        for cell in ws[1]:
+            cell.fill = header_fill
+            cell.font = header_font
+            cell.alignment = Alignment(horizontal='center', vertical='center', wrap_text=True)
+        
+        # Example row
+        ws.append([
+            'Ahmed Ali',
+            'ABC Trading LLC',
+            'Passport',
+            'Self',
+            'Ahmed Ali',
+            '31/12/2025',
+            'Urgent renewal required'
+        ])
+        
+        # Auto-size columns
+        for column in ws.columns:
+            max_length = 0
+            column_letter = column[0].column_letter
+            for cell in column:
+                try:
+                    if len(str(cell.value)) > max_length:
+                        max_length = len(cell.value)
+                except:
+                    pass
+            adjusted_width = min(max_length + 2, 50)
+            ws.column_dimensions[column_letter].width = adjusted_width
+        
+        # Save to BytesIO
+        output = BytesIO()
+        wb.save(output)
+        output.seek(0)
+        
+        return send_file(
+            output,
+            mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            as_attachment=True,
+            download_name='documents_import_template.xlsx'
+        )
+    except Exception as e:
+        flash(f'Error generating template: {str(e)}', 'error')
+        return redirect(url_for('documents'))
+
+@app.route('/documents/import', methods=['POST'])
+@login_required
+def import_documents():
+    """Import documents from Excel file"""
+    try:
+        import openpyxl
+        from datetime import datetime
+        
+        if 'file' not in request.files:
+            flash('No file uploaded', 'error')
+            return redirect(url_for('documents'))
+        
+        file = request.files['file']
+        if file.filename == '':
+            flash('No file selected', 'error')
+            return redirect(url_for('documents'))
+        
+        if not file.filename.endswith('.xlsx'):
+            flash('Only .xlsx files are supported', 'error')
+            return redirect(url_for('documents'))
+        
+        # Read Excel
+        wb = openpyxl.load_workbook(file)
+        ws = wb.active
+        
+        success_count = 0
+        error_count = 0
+        errors = []
+        
+        # Skip header row, process data rows
+        for idx, row in enumerate(ws.iter_rows(min_row=2, values_only=True), start=2):
+            try:
+                if not row or all(cell is None for cell in row):
+                    continue
+                
+                customer_name, company, doc_type, belongs_to, owner_name, expiry_str, notes = row[:7]
+                
+                # Validate required fields
+                if not customer_name or not doc_type or not expiry_str:
+                    errors.append(f"Row {idx}: Missing required fields (Customer Name, Doc Type, or Expiry Date)")
+                    error_count += 1
+                    continue
+                
+                # Parse expiry date
+                try:
+                    expiry_date = datetime.strptime(str(expiry_str).strip(), '%d/%m/%Y').date()
+                except:
+                    errors.append(f"Row {idx}: Invalid date format '{expiry_str}' (use DD/MM/YYYY)")
+                    error_count += 1
+                    continue
+                
+                # Find or create customer
+                customer = Customer.query.filter_by(name=customer_name).first()
+                if not customer:
+                    customer = Customer(
+                        name=customer_name,
+                        company=company if company else None
+                    )
+                    db.session.add(customer)
+                    db.session.flush()  # Get customer ID
+                
+                # Create document
+                doc = Document(
+                    customer_id=customer.id,
+                    doc_type=doc_type,
+                    belongs_to=belongs_to if belongs_to else None,
+                    owner_name=owner_name if owner_name else None,
+                    expiry_date=expiry_date,
+                    notes=notes if notes else None,
+                    added_by=session.get('name', 'System')
+                )
+                
+                db.session.add(doc)
+                success_count += 1
+                
+            except Exception as e:
+                errors.append(f"Row {idx}: {str(e)}")
+                error_count += 1
+        
+        db.session.commit()
+        
+        # Flash results
+        if success_count > 0:
+            flash(f'Successfully imported {success_count} document(s)', 'success')
+        if error_count > 0:
+            flash(f'Failed to import {error_count} document(s). Errors: {"; ".join(errors[:5])}', 'error')
+        
+        return redirect(url_for('documents'))
+        
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error importing documents: {str(e)}', 'error')
+        return redirect(url_for('documents'))
+
 @app.route('/documents/add', methods=['GET', 'POST'])
 @login_required
 def add_document():
