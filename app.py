@@ -6085,6 +6085,117 @@ def import_visas():
 # ══════════════════════════════════════════════════════════════════════════════
 
 # ══════════════════════════════════════════════════════════════════════════════
+# TASK MANAGEMENT ROUTES
+# ══════════════════════════════════════════════════════════════════════════════
+
+@app.route('/tasks')
+@login_required
+def tasks_list():
+    """List all tasks"""
+    if session['role'] == 'staff':
+        # Staff see only their assigned tasks
+        tasks = Task.query.filter_by(assigned_to=session['user_id']).order_by(Task.due_date).all()
+    else:
+        # Admin sees all tasks
+        tasks = Task.query.order_by(Task.due_date).all()
+    
+    return render_template('tasks.html', tasks=tasks)
+
+@app.route('/tasks/add', methods=['GET', 'POST'])
+@login_required
+def add_task():
+    """Add new task"""
+    users = User.query.filter_by(active=True).all()
+    
+    if request.method == 'POST':
+        try:
+            task = Task(
+                title=request.form.get('title'),
+                description=request.form.get('description'),
+                assigned_to=request.form.get('assigned_to', type=int),
+                due_date=datetime.strptime(request.form.get('due_date'), '%Y-%m-%d').date() if request.form.get('due_date') else None,
+                priority=request.form.get('priority', 'Medium'),
+                status=request.form.get('status', 'Pending'),
+                created_by=session['user_id']
+            )
+            
+            # Link to job if job_id provided
+            job_id = request.form.get('job_id', type=int)
+            if job_id:
+                task.job_id = job_id
+            
+            db.session.add(task)
+            db.session.commit()
+            flash('Task created successfully')
+            
+            if job_id:
+                return redirect(url_for('job_detail', job_id=job_id))
+            return redirect(url_for('tasks_list'))
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Error creating task: {str(e)}', 'error')
+    
+    return render_template('add_task.html', users=users, now=datetime.now())
+
+@app.route('/tasks/<int:task_id>/edit', methods=['GET', 'POST'])
+@login_required
+def edit_task(task_id):
+    """Edit existing task"""
+    task = Task.query.get_or_404(task_id)
+    users = User.query.filter_by(active=True).all()
+    
+    if request.method == 'POST':
+        try:
+            task.title = request.form.get('title')
+            task.description = request.form.get('description')
+            task.assigned_to = request.form.get('assigned_to', type=int)
+            task.due_date = datetime.strptime(request.form.get('due_date'), '%Y-%m-%d').date() if request.form.get('due_date') else None
+            task.priority = request.form.get('priority')
+            task.status = request.form.get('status')
+            
+            db.session.commit()
+            flash('Task updated successfully')
+            return redirect(url_for('tasks_list'))
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Error updating task: {str(e)}', 'error')
+    
+    return render_template('edit_task.html', task=task, users=users)
+
+@app.route('/tasks/<int:task_id>/delete')
+@login_required
+def delete_task(task_id):
+    """Delete task"""
+    try:
+        task = Task.query.get_or_404(task_id)
+        db.session.delete(task)
+        db.session.commit()
+        flash('Task deleted successfully')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error deleting task: {str(e)}', 'error')
+    
+    return redirect(url_for('tasks_list'))
+
+@app.route('/tasks/<int:task_id>/complete')
+@login_required
+def complete_task(task_id):
+    """Mark task as completed"""
+    try:
+        task = Task.query.get_or_404(task_id)
+        task.status = 'Completed'
+        task.completed_at = datetime.now()
+        db.session.commit()
+        flash('Task marked as completed')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error completing task: {str(e)}', 'error')
+    
+    return redirect(url_for('tasks_list'))
+
+# ══════════════════════════════════════════════════════════════════════════════
+
+# ══════════════════════════════════════════════════════════════════════════════
 # DATABASE INITIALIZATION
 # ══════════════════════════════════════════════════════════════════════════════
 if __name__ == '__main__':
