@@ -1,0 +1,17 @@
+THREE ISSUES TO FIX:
+
+1. TASK SAVING NOT WORKING
+   - add_task.html template exists but no route
+   - Need to create /job/<id>/task/add route
+
+2. UMRA BATCHES - NEED ADD/EDIT/DELETE
+   - Add edit button to batches list
+   - Add delete button to batches list
+   - Routes might already exist, just need UI
+
+3. UMRA PAGE - CUSTOMER NAME NOT SHOWING
+   - Template expects primary.passenger_name
+   - Need to pass primary passenger to template OR
+   - Add helper method to UmrahBooking model
+
+Let me fix these now...

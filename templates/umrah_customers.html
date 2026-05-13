@@ -97,16 +97,17 @@
           <tbody>
             {% for booking in bookings %}
             {% set primary = None %}
+            {% set primary = namespace(passenger=None) %}
             {% for p in booking.passengers %}
-              {% if p.is_primary %}{% set primary = p %}{% endif %}
+              {% if p.is_primary %}{% set primary.passenger = p %}{% endif %}
             {% endfor %}
             <tr>
               <td>
                 <div style="font-weight:600;color:var(--text-primary);">
-                  {{ primary.passenger_name if primary else 'N/A' }}
+                  {{ primary.passenger.passenger_name if primary.passenger else 'N/A' }}
                 </div>
-                {% if primary and primary.phone_number %}
-                <div style="font-size:11px;color:#94A3B8;">{{ primary.phone_number }}</div>
+                {% if primary.passenger and primary.passenger.phone_number %}
+                <div style="font-size:11px;color:#94A3B8;">{{ primary.passenger.phone_number }}</div>
                 {% endif %}
               </td>
               <td>

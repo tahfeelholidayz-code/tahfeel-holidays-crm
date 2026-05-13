@@ -5364,6 +5364,63 @@ def umrah_batch_detail(batch_id):
     batch = UmrahBatch.query.get_or_404(batch_id)
     return render_template('umrah_batch_detail.html', batch=batch)
 
+@app.route('/umrah/batch/<int:batch_id>/edit', methods=['GET', 'POST'])
+@login_required
+def edit_umrah_batch(batch_id):
+    """Edit an existing umrah batch"""
+    batch = UmrahBatch.query.get_or_404(batch_id)
+    
+    if request.method == 'POST':
+        try:
+            batch.batch_name = request.form.get('batch_name')
+            batch.batch_type = request.form.get('batch_type')
+            batch.status = request.form.get('status')
+            
+            departure = request.form.get('departure_date')
+            if departure:
+                batch.departure_date = datetime.strptime(departure, '%Y-%m-%d').date()
+            
+            batch.duration_days = request.form.get('duration_days', type=int)
+            batch.hotel_name = request.form.get('hotel_name')
+            batch.flight_details = request.form.get('flight_details')
+            batch.notes = request.form.get('notes')
+            
+            if batch.batch_type == 'Third Party':
+                batch.third_party_agency = request.form.get('third_party_agency')
+                batch.third_party_per_person_cost = request.form.get('third_party_per_person_cost', type=float)
+            
+            db.session.commit()
+            flash(f'Batch {batch.batch_number} updated successfully')
+            return redirect(url_for('umrah_batch_detail', batch_id=batch.id))
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Error updating batch: {str(e)}', 'error')
+    
+    return render_template('umrah_batch_create.html', batch=batch, edit_mode=True)
+
+@app.route('/umrah/batch/<int:batch_id>/delete')
+@login_required
+def delete_umrah_batch(batch_id):
+    """Delete umrah batch and unassign customers"""
+    try:
+        batch = UmrahBatch.query.get_or_404(batch_id)
+        batch_number = batch.batch_number
+        
+        # Unassign all customers from this batch
+        bookings = UmrahBooking.query.filter_by(batch_id=batch_id).all()
+        for booking in bookings:
+            booking.batch_id = None
+            booking.status = 'Not Assigned'
+        
+        db.session.delete(batch)
+        db.session.commit()
+        flash(f'Batch {batch_number} deleted. Customers unassigned.')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error deleting batch: {str(e)}', 'error')
+    
+    return redirect(url_for('umrah_batches_list'))
+
 @app.route('/umrah/batch/<int:batch_id>/add-expense', methods=['POST'])
 @login_required
 def add_batch_expense(batch_id):
