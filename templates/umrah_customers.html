@@ -88,6 +88,7 @@
         {% for batch in batches %}
           <option value="{{ batch.id }}">{{ batch.batch_number }}{% if batch.batch_name %} — {{ batch.batch_name }}{% endif %}</option>
         {% endfor %}
+        <option value="unassign">✖ Remove from Batch</option>
       </select>
       <button type="submit" style="padding:8px 18px;background:#8B5CF6;color:white;border:none;border-radius:6px;font-weight:600;font-size:13px;cursor:pointer;">Assign Selected</button>
       <span id="selectedCount" style="color:#6D28D9;font-size:13px;font-weight:600;"></span>
@@ -149,6 +150,7 @@
                   {% for batch in batches %}
                     <option value="{{ batch.id }}" {% if booking.batch_id == batch.id %}selected{% endif %}>{{ batch.batch_number }}</option>
                   {% endfor %}
+                  {% if booking.batch_id %}<option value="unassign">✖ Remove from batch</option>{% endif %}
                 </select>
               </td>
               <td>

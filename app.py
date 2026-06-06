@@ -5276,7 +5276,17 @@ def assign_to_batch(booking_id):
     booking = UmrahBooking.query.get_or_404(booking_id)
     
     try:
-        batch_id = int(request.form.get('batch_id'))
+        batch_id = request.form.get('batch_id')
+        
+        # Remove from batch
+        if not batch_id or batch_id == 'unassign':
+            booking.batch_id = None
+            booking.status = 'Not Assigned'
+            db.session.commit()
+            flash('Customer removed from batch.')
+            return redirect(request.referrer or url_for('umrah_customer_detail', booking_id=booking_id))
+        
+        batch_id = int(batch_id)
         batch = UmrahBatch.query.get_or_404(batch_id)
         
         booking.batch_id = batch_id
@@ -5307,6 +5317,19 @@ def assign_bulk_to_batch():
         return redirect(url_for('umrah_customers'))
 
     try:
+        # Bulk remove from batch
+        if batch_id == 'unassign':
+            count = 0
+            for bid in booking_ids:
+                booking = UmrahBooking.query.get(int(bid))
+                if booking:
+                    booking.batch_id = None
+                    booking.status = 'Not Assigned'
+                    count += 1
+            db.session.commit()
+            flash(f'{count} customer(s) removed from batch.')
+            return redirect(url_for('umrah_customers'))
+
         batch = UmrahBatch.query.get_or_404(int(batch_id))
         count = 0
         for bid in booking_ids:
