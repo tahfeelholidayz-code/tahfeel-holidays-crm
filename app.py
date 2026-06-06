@@ -5789,16 +5789,43 @@ def edit_visa(job_id):
         
         # Date of birth
         dob = request.form.get('dob')
-        if dob:
-            job.visa_dob = datetime.strptime(dob, '%Y-%m-%d').date()
-        else:
-            job.visa_dob = None
+        dob_date = datetime.strptime(dob, '%Y-%m-%d').date() if dob else None
+        job.visa_dob = dob_date
         
+        job.visa_nationality = request.form.get('nationality')
         job.visa_customer_phone = request.form.get('customer_phone')
         job.visa_contact_number_2 = request.form.get('contact_number_2')
         job.visa_vendor = request.form.get('vendor')
         job.visa_third_party_agency = request.form.get('agency')
         job.visa_notes = request.form.get('notes')
+
+        # Keep the linked Customer in sync (relink off the legacy dummy if needed)
+        if not job.customer_id or job.customer_id == 1:
+            cust = None
+            if job.visa_customer_phone:
+                cust = Customer.query.filter_by(phone=job.visa_customer_phone).first()
+            if not cust:
+                cust = Customer(
+                    name=job.visa_customer_name,
+                    phone=job.visa_customer_phone,
+                    nationality=job.visa_nationality,
+                    date_of_birth=dob_date,
+                    source='Visa Management',
+                    customer_type='Individual',
+                    assigned_to=session['user_id']
+                )
+                db.session.add(cust)
+                db.session.flush()
+            job.customer_id = cust.id
+        elif job.customer:
+            # Real customer already linked - update their core details
+            job.customer.name = job.visa_customer_name or job.customer.name
+            if job.visa_customer_phone:
+                job.customer.phone = job.visa_customer_phone
+            if job.visa_nationality:
+                job.customer.nationality = job.visa_nationality
+            if dob_date:
+                job.customer.date_of_birth = dob_date
         
         db.session.commit()
         flash('Visa details updated')
