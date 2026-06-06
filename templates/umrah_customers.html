@@ -79,11 +79,25 @@
 
     <!-- Customers List -->
     {% if bookings %}
+    <!-- Bulk Assign Bar -->
+    <form method="POST" action="/umrah/customers/assign-bulk" id="bulkForm">
+    <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:14px;padding:12px 16px;background:#F5F3FF;border:1px solid #C4B5FD;border-radius:10px;">
+      <strong style="color:#6D28D9;font-size:14px;">📦 Bulk Assign to Batch:</strong>
+      <select name="batch_id" required style="padding:8px 10px;border:1px solid #C4B5FD;border-radius:6px;font-size:13px;min-width:200px;">
+        <option value="">-- Select Batch --</option>
+        {% for batch in batches %}
+          <option value="{{ batch.id }}">{{ batch.batch_number }}{% if batch.batch_name %} — {{ batch.batch_name }}{% endif %}</option>
+        {% endfor %}
+      </select>
+      <button type="submit" style="padding:8px 18px;background:#8B5CF6;color:white;border:none;border-radius:6px;font-weight:600;font-size:13px;cursor:pointer;">Assign Selected</button>
+      <span id="selectedCount" style="color:#6D28D9;font-size:13px;font-weight:600;"></span>
+    </div>
     <div class="card">
       <div class="card-body" style="padding:0;">
         <table>
           <thead>
             <tr>
+              <th style="width:36px;text-align:center;"><input type="checkbox" id="selectAll" onclick="toggleAll(this)"></th>
               <th>Primary Customer</th>
               <th>People</th>
               <th>Package Amount</th>
@@ -102,6 +116,7 @@
               {% if p.is_primary %}{% set primary.passenger = p %}{% endif %}
             {% endfor %}
             <tr>
+              <td style="text-align:center;"><input type="checkbox" name="booking_ids" value="{{ booking.id }}" class="rowCheck" onclick="updateCount()"></td>
               <td>
                 <div style="font-weight:600;color:var(--text-primary);">
                   {{ primary.passenger.passenger_name if primary.passenger else 'N/A' }}
@@ -129,6 +144,12 @@
                     Not Assigned
                   </span>
                 {% endif %}
+                <select onchange="quickAssign({{ booking.id }}, this.value)" style="display:block;margin-top:6px;padding:5px 8px;border:1px solid #CBD5E1;border-radius:6px;font-size:11px;max-width:160px;">
+                  <option value="">Assign batch…</option>
+                  {% for batch in batches %}
+                    <option value="{{ batch.id }}" {% if booking.batch_id == batch.id %}selected{% endif %}>{{ batch.batch_number }}</option>
+                  {% endfor %}
+                </select>
               </td>
               <td>
                 <span style="background:{% if booking.status == 'Not Assigned' %}#FEF3C7{% elif booking.status == 'In Batch' %}#ECFDF5{% else %}#F1F5F9{% endif %};color:{% if booking.status == 'Not Assigned' %}#92400E{% elif booking.status == 'In Batch' %}#065F46{% else %}#475569{% endif %};padding:4px 8px;border-radius:10px;font-size:10px;font-weight:600;">
@@ -155,6 +176,33 @@
         </table>
       </div>
     </div>
+    </form>
+
+    <!-- Hidden form for per-row single quick-assign -->
+    <form method="POST" id="singleForm" style="display:none;">
+      <input type="hidden" name="batch_id" id="singleBatchId">
+    </form>
+
+    <script>
+      function toggleAll(box) {
+        document.querySelectorAll('.rowCheck').forEach(function(c){ c.checked = box.checked; });
+        updateCount();
+      }
+      function updateCount() {
+        var n = document.querySelectorAll('.rowCheck:checked').length;
+        document.getElementById('selectedCount').textContent = n ? (n + ' selected') : '';
+        var all = document.getElementById('selectAll');
+        var total = document.querySelectorAll('.rowCheck').length;
+        if (all) all.checked = (n === total && total > 0);
+      }
+      function quickAssign(bookingId, batchId) {
+        if (!batchId) return;
+        var f = document.getElementById('singleForm');
+        f.action = '/umrah/customer/' + bookingId + '/assign-batch';
+        document.getElementById('singleBatchId').value = batchId;
+        f.submit();
+      }
+    </script>
     {% else %}
     <div class="card">
       <div class="card-body" style="text-align:center;padding:60px 20px;color:#94A3B8;">

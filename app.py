@@ -5068,8 +5068,12 @@ def umrah_customers():
     total_balance = sum(b.balance_pending for b in bookings)
     not_assigned_count = sum(1 for b in bookings if b.status == 'Not Assigned')
     
+    # Batches for the assign dropdowns (single + bulk)
+    batches = UmrahBatch.query.order_by(UmrahBatch.batch_number).all()
+    
     return render_template('umrah_customers.html', 
                          bookings=bookings,
+                         batches=batches,
                          total_people=total_people,
                          total_adults=total_adults,
                          total_children=total_children,
@@ -5281,16 +5285,43 @@ def assign_to_batch(booking_id):
         db.session.commit()
         
         flash(f'Customer assigned to batch {batch.batch_number} successfully!')
-        return redirect(url_for('umrah_customer_detail', booking_id=booking_id))
+        return redirect(request.referrer or url_for('umrah_customer_detail', booking_id=booking_id))
         
     except Exception as e:
         db.session.rollback()
         flash(f'Error: {str(e)}', 'error')
-        return redirect(url_for('umrah_customer_detail', booking_id=booking_id))
+        return redirect(request.referrer or url_for('umrah_customer_detail', booking_id=booking_id))
 
-# ============================================
-# BATCH MANAGEMENT ROUTES
-# ============================================
+@app.route('/umrah/customers/assign-bulk', methods=['POST'])
+@login_required
+def assign_bulk_to_batch():
+    """Assign multiple customers to a batch at once"""
+    booking_ids = request.form.getlist('booking_ids')
+    batch_id = request.form.get('batch_id')
+
+    if not batch_id:
+        flash('Please select a batch.', 'error')
+        return redirect(url_for('umrah_customers'))
+    if not booking_ids:
+        flash('Please select at least one customer.', 'error')
+        return redirect(url_for('umrah_customers'))
+
+    try:
+        batch = UmrahBatch.query.get_or_404(int(batch_id))
+        count = 0
+        for bid in booking_ids:
+            booking = UmrahBooking.query.get(int(bid))
+            if booking:
+                booking.batch_id = batch.id
+                booking.status = 'In Batch'
+                count += 1
+        db.session.commit()
+        flash(f'{count} customer(s) assigned to batch {batch.batch_number} successfully!')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error: {str(e)}', 'error')
+
+    return redirect(url_for('umrah_customers'))
 
 @app.route('/umrah/batches-list')
 @login_required
