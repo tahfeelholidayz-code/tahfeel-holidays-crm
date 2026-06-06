@@ -161,7 +161,7 @@
         <div style="font-size:12px;color:#94A3B8;margin-top:2px;">Track visa expiries and follow up with customers</div>
       </div>
       <div style="display:flex;gap:12px;">
-        <button onclick="document.getElementById('importModal').style.display='flex'" style="display:inline-flex;align-items:center;gap:8px;padding:10px 20px;background:linear-gradient(135deg, #F59E0B 0%, #D97706 100%);color:white;border:none;border-radius:10px;font-weight:600;font-size:14px;cursor:pointer;transition:all 0.2s;box-shadow:0 4px 6px rgba(245, 158, 11, 0.2);" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 6px 12px rgba(245, 158, 11, 0.3)'" onmouseout="this.style.transform='translateY(0)';this.style.boxShadow='0 4px 6px rgba(245, 158, 11, 0.2)'">
+        <button id="importBtn" type="button" onclick="openVisaModal('importModal')" style="display:inline-flex;align-items:center;gap:8px;padding:10px 20px;background:linear-gradient(135deg, #F59E0B 0%, #D97706 100%);color:white;border:none;border-radius:10px;font-weight:600;font-size:14px;cursor:pointer;transition:all 0.2s;box-shadow:0 4px 6px rgba(245, 158, 11, 0.2);" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 6px 12px rgba(245, 158, 11, 0.3)'" onmouseout="this.style.transform='translateY(0)';this.style.boxShadow='0 4px 6px rgba(245, 158, 11, 0.2)'">
           <span>⬆</span>
           <span>Import</span>
         </button>
@@ -569,5 +569,19 @@
       </div>
     </div>
   </div>
+  <script>
+    // Robust modal opener (works even if inline onclick is blocked)
+    function openVisaModal(id) {
+      var m = document.getElementById(id);
+      if (m) { m.style.display = 'flex'; }
+    }
+    // Fallback wiring in case the inline handler doesn't fire
+    document.addEventListener('DOMContentLoaded', function () {
+      var ib = document.getElementById('importBtn');
+      if (ib) {
+        ib.addEventListener('click', function () { openVisaModal('importModal'); });
+      }
+    });
+  </script>
 </body>
 </html>
