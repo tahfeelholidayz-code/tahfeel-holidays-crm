@@ -5695,6 +5695,7 @@ def visa_management():
     return render_template('visa_management.html',
                          visas=visas,
                          agencies=agencies,
+                         customers=Customer.query.order_by(Customer.name).all(),
                          stats={
                              'total': len(visas),
                              'active': total_active,
@@ -5707,43 +5708,69 @@ def visa_management():
 @app.route('/visa-management/add', methods=['POST'])
 @login_required
 def add_visa_manually():
-    """Add a visa record manually (not from a task)"""
+    """Add a visa record manually - links to a real Customer (select existing or create new)"""
     try:
-        # Create a dummy job record just for visa tracking
+        existing_customer_id = request.form.get('existing_customer_id')
+        customer_name = request.form.get('customer_name')
+        customer_phone = request.form.get('customer_phone')
+        nationality = request.form.get('nationality')
+        dob = request.form.get('dob')
+        dob_date = datetime.strptime(dob, '%Y-%m-%d').date() if dob else None
+
+        # Step 1: Resolve the customer (use selected, or create new)
+        if existing_customer_id:
+            customer = Customer.query.get_or_404(int(existing_customer_id))
+        else:
+            if not customer_name:
+                flash('Customer name is required.', 'error')
+                return redirect(url_for('visa_management'))
+            # Light dedupe: reuse a customer with the same phone if one exists
+            customer = None
+            if customer_phone:
+                customer = Customer.query.filter_by(phone=customer_phone).first()
+            if not customer:
+                customer = Customer(
+                    name=customer_name,
+                    phone=customer_phone,
+                    nationality=nationality,
+                    date_of_birth=dob_date,
+                    source='Visa Management',
+                    customer_type='Individual',
+                    assigned_to=session['user_id']
+                )
+                db.session.add(customer)
+                db.session.flush()  # get customer.id before creating the job
+
+        # Step 2: Create the visa job linked to the real customer
         job = Job()
-        job.customer_id = 1  # Dummy customer (you might want to create a "Manual Entry" customer)
+        job.customer_id = customer.id
         job.job_type = 'Manual Visa Entry'
         job.assigned_to = session['user_id']
         job.status = 'Done'
         job.created_by = session['user_id']
-        
-        # All visa fields
-        job.visa_customer_name = request.form.get('customer_name')
+
+        # Visa fields (kept denormalized for the list/export/view that read them)
+        job.visa_customer_name = customer.name
         job.visa_reference = request.form.get('reference')
         job.visa_expiry_date = datetime.strptime(request.form.get('expiry_date'), '%Y-%m-%d').date()
         job.visa_uid_no = request.form.get('uid_no')
         job.visa_passport_no = request.form.get('passport_no')
-        
-        # Date of birth
-        dob = request.form.get('dob')
-        if dob:
-            job.visa_dob = datetime.strptime(dob, '%Y-%m-%d').date()
-        
-        job.visa_nationality = request.form.get('nationality')
-        job.visa_customer_phone = request.form.get('customer_phone')
+        job.visa_dob = dob_date or customer.date_of_birth
+        job.visa_nationality = nationality or customer.nationality
+        job.visa_customer_phone = customer_phone or customer.phone
         job.visa_contact_number_2 = request.form.get('contact_number_2')
         job.visa_vendor = request.form.get('vendor')
         job.visa_third_party_agency = request.form.get('agency')
         job.visa_notes = request.form.get('notes')
-        
+
         db.session.add(job)
         db.session.commit()
-        
-        flash(f'Visa added for {job.visa_customer_name}')
+
+        flash(f'Visa added for {customer.name}')
     except Exception as e:
         db.session.rollback()
         flash(f'Error adding visa: {str(e)}', 'error')
-    
+
     return redirect(url_for('visa_management'))
 
 @app.route('/visa-management/<int:job_id>/edit', methods=['POST'])
